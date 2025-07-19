@@ -24,3 +24,11 @@ file(GLOB_RECURSE SOURCES
 add_executable(cpt ${SOURCES})
 
 target_link_libraries(cpt PRIVATE ${Boost_LIBRARIES}) 
+
+# make install で ~/.local/bin にインストール
+install(TARGETS cpt DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
+# デフォルトのインストール先を ~/.local に設定
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/.local" CACHE PATH "" FORCE)
+endif() 

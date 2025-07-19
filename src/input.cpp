@@ -16,9 +16,15 @@ std::string get_all_source_input(int argc, char**argv){
   namespace fs=std::filesystem;
   if(argc==1) // 入力は標準入力から
     return get_source_from_stream(std::cin);
-  if(argc==2 && fs::exists(fs::path(argv[1]))) //ファイルが存在するならそれを入力とする
-    if(std::ifstream ifile(argv[1]);ifile)
-      return get_source_from_stream(ifile);
+  //ファイルが存在するならそれを入力とする
+  if(argc==3){
+    if(argv[1]=="-f"){
+      if(std::ifstream ifile(argv[2]);ifile)
+        return get_source_from_stream(ifile);
+    }else if(argv[2]=="-f")
+      if(std::ifstream ifile(argv[1]);ifile)
+        return get_source_from_stream(ifile);
+  }
   std::string buffer;
   for(int i=1;i<argc;++i){
     buffer+=argv[i];

@@ -9,7 +9,7 @@ class tokenize{
   tokenize()=delete;
   tokenize(const tokenize&)=default;
   tokenize(tokenize&&)=default;
-  tokenize(std::string_view&istr)noexcept(false);
+  tokenize(std::string_view istr)noexcept(false);
   tokenize&operator=(const tokenize&)=default;
   tokenize&operator=(tokenize&&)=default;
   ~tokenize()=default;

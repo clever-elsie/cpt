@@ -20,22 +20,23 @@ inline expr_t get_arg(tokenize&tok)noexcept(false){
 
 // first.token=='_'の状態で使う
 inline std::pair<std::string,expr_t> get_below_with_declare(tokenize&tok)noexcept(false){
-  tok.next_token();
+  tok.next_token(); // _を消費
   if(tok.top().token!="{"){
     std::cerr<<"下付き引数には{}が必要です"<<std::endl;
     exit(EXIT_FAILURE);
   }
-  tok.next_token();
+  tok.next_token(); // {を消費
   if(tok.top().type!=token_t::IDENT){
     std::cerr<<"変数が必要です"<<std::endl;
     exit(EXIT_FAILURE);
   }
   const std::string name(tok.top().token);
-  tok.next_token();
+  tok.next_token(); // 変数名を消費
   if(tok.top().token!="="){
     std::cerr<<"変数は初期化してください"<<std::endl;
     exit(EXIT_FAILURE);
-  }    
+  }
+  tok.next_token(); // =を消費
   expr_t init=expr(tok);
   if(!std::holds_alternative<bint>(init)){
     std::cerr<<"ループ変数の初期値は整数である必要があります"<<std::endl;

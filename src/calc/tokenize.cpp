@@ -2,7 +2,7 @@
 #include "expr/expr.hpp"
 namespace CALC{
 
-tokenize::tokenize(std::string_view&istr)noexcept(false):istr(istr){
+tokenize::tokenize(std::string_view istr)noexcept(false):istr(istr){
   first=get_token();
 }
 
@@ -108,10 +108,10 @@ pToken tokenize::get_ident()noexcept(true){
   const token_t is_reserverd = istr[0]=='\\'?token_t::RESERVED:token_t::IDENT;
   size_t i=1;
   for(;i<istr.size();++i)
-    if(!std::isalnum(istr[i])&&!istr[i]=='_')
+    if(!std::isalnum(istr[i]))
       break;
   std::string_view ret(istr.begin(),i);
-  ret=std::string_view(istr.begin()+i,istr.end());
+  istr=std::string_view(istr.begin()+i,istr.end());
   return{is_reserverd,ret};
 }
 
@@ -124,7 +124,7 @@ pToken tokenize::get_token()noexcept(false){
   }
   if(std::isdigit(istr[0])) 
     return get_number();
-  if(std::isalpha(istr[0])||istr[0]=='\\'||istr[0]=='_')
+  if(std::isalpha(istr[0])||istr[0]=='\\')
     return get_ident();
   int cnt=1;
   switch(istr[0]){ // caseは昇順．最適化を信じろ

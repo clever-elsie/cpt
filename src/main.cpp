@@ -1,6 +1,8 @@
 #include <iostream>
 #include "input.hpp"
 #include "calc/top.hpp"
+#include "calc/tokenize.hpp"
+#include "calc/type.hpp"
 
 
 int main(int argc, char**argv){

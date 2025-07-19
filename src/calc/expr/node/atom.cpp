@@ -12,7 +12,7 @@ expr_t atom(tokenize&tok) noexcept(false) {
   }else if(token_t::IDENT==tok.top().type){
     auto itr=var_map.find(tok.top().token);
     if(itr==var_map.end()||itr->second.size()==0){
-      std::cerr<<"未定義変数を使ってるよ"<<std::endl;
+      std::cerr<<"未定義変数"<<tok.top().token<<"を使ってるよ"<<std::endl;
       exit(EXIT_FAILURE);
     }
     tok.next_token();
@@ -21,7 +21,7 @@ expr_t atom(tokenize&tok) noexcept(false) {
     return reserved_functions(tok);
   else if(tok.top().token=="!"){
     tok.next_token();
-    expr_t value=expr(tok);
+    expr_t value=atom(tok);
     if(std::holds_alternative<bool>(value)){
       return expr_t(!std::get<bool>(value));
     }else{

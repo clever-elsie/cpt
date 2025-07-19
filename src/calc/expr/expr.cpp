@@ -7,15 +7,7 @@ namespace CALC{ namespace EXPR{
 expr_t expr(tokenize&tok) noexcept(false) {
   if(tok.top().type==token_t::EMPTY)
     throw except::EMPTY;
-  expr_t ret=expr_3(tok);
-  if(tok.top().type!=token_t::EMPTY){
-    if(tok.top().token==";") tok.next_token();
-    else{
-      std::cerr<<"最後の式以外では，式の末尾にセミコロンが必要です"<<std::endl;
-      exit(EXIT_FAILURE);
-    }
-  }
-  return ret;
+  return expr_3(tok);
 }
 
 expr_t expr_3(tokenize&tok) noexcept(false){
