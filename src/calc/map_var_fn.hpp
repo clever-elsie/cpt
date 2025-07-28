@@ -22,6 +22,14 @@ struct StringEqual{
   bool operator()(sv lhs,str rhs)const noexcept{return lhs==rhs;}
   bool operator()(str lhs,str rhs)const noexcept{return lhs==rhs;}
 };
+
+struct Fn{
+  std::vector<std::string_view> args,vars;
+  std::string body;
+  template<class Args,class Vars,class Body>
+  Fn(Args&&args,Vars&&vars,Body&&body)
+  :args(std::forward<Args>(args)),vars(std::forward<Vars>(vars)),body(std::forward<Body>(body)){}
+};
 }// namespace CALC_MAP
 
 namespace CALC{
@@ -29,6 +37,13 @@ template<class expr_t>
 using VAR_MAP=std::unordered_map<
   std::string,
   std::vector<expr_t>,
+  CALC_MAP::StringHash,
+  CALC_MAP::StringEqual
+>;
+
+using FN_MAP=std::unordered_map<
+  std::string,
+  CALC_MAP::Fn,
   CALC_MAP::StringHash,
   CALC_MAP::StringEqual
 >;

@@ -4,7 +4,7 @@
 #include <string>
 #include <variant>
 #include <string_view>
-#include "var_map.hpp"
+#include "map_var_fn.hpp"
 namespace CALC{
 enum class except{
   EMPTY,

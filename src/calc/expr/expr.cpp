@@ -14,8 +14,14 @@ expr_t expr_3(tokenize&tok) noexcept(false){
   expr_t e1=or_expr(tok);
   if(tok.top().type!=token_t::EMPTY && tok.top().token=="?"){
     if(!std::holds_alternative<bool>(e1)){
-      std::cerr<<"3項演算子の条件はboolでなければなりません"<<std::endl;
-      exit(EXIT_FAILURE);
+      if(std::holds_alternative<bint>(e1))
+        e1=bint(static_cast<int>(std::get<bint>(e1))!=0);
+      else if(std::holds_alternative<bfloat>(e1))
+        e1=bfloat(std::get<bfloat>(e1)!=0);
+      else{
+        std::cerr<<"無効な条件式の型"<<std::endl;
+        exit(EXIT_FAILURE);
+      }
     }
     tok.next_token(); // ?を消費
     expr_t e2=expr(tok);

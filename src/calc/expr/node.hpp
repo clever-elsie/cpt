@@ -1,7 +1,10 @@
 #pragma once
 #include "expr.hpp"
 
-namespace CALC{namespace EXPR{
+namespace CALC{
+bool top(std::string_view istr);
+expr_t second(tokenize&tok,bool is_fn);
+namespace EXPR{
 expr_t expr_3(tokenize&tok) noexcept(false);
 expr_t or_expr(tokenize&tok) noexcept(false);
 expr_t and_expr(tokenize&tok) noexcept(false); 

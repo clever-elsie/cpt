@@ -129,17 +129,21 @@ pToken tokenize::get_token()noexcept(false){
   int cnt=1;
   switch(istr[0]){ // caseは昇順．最適化を信じろ
     case '!': case '%':break;
-    case '&': case '*': if(istr.size()>1&&istr[0]==istr[1]) cnt=2; break;
+    case '&':
+      if(istr.size()>1&&istr[0]==istr[1]) cnt=2; break;
+    case '(': case ')': break;
+    case '*':
+      if(istr.size()>1&&istr[0]==istr[1]) cnt=2; break;
     case '+': case ',': case '-': break;
     case '/': if(istr.size()>1&&istr[1]=='/') cnt=2; break;
-    case ';': break;
+    case ':': case ';': break;
     case '<': case '=': case '>':
       if(istr.size()>1&&istr[1]=='=') cnt=2; break;
-    case '^': case '_': case '{': break;
+    case '?': case '^': case '_': case '{': break;
     case '|': if(istr.size()>1&&istr[1]=='|') cnt=2; break;
     case '}': break;
     default:
-      std::cerr<<static_cast<int>(istr[0])<<"は無効な記号です"<<std::endl;
+      std::cerr<<static_cast<char>(istr[0])<<"は無効な記号です"<<std::endl;
       exit(EXIT_FAILURE);
       break;
   }
