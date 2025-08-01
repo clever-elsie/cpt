@@ -2,20 +2,33 @@
 #include "expr/expr.hpp"
 namespace CALC{
 
-tokenize::tokenize(std::string_view istr)noexcept(false):istr(istr){
+tokenize::tokenize(std::string_view istr)noexcept:istr(istr),row(1),col(1){
   first=get_token();
 }
 
-pToken tokenize::next_token()noexcept(false){
+void tokenize::error_exit(const std::string_view&msg)noexcept{
+  std::cerr<<row<<":"<<col<<":"<<std::string(msg)<<std::endl;
+  auto itr=istr.begin();
+  for(;itr!=istr.end();++itr)
+    if(*itr=='\n'||*itr=='\r') break;
+  std::string_view line_view(istr.begin()-col+1,itr);
+  std::cerr<<std::string(line_view)<<std::endl;
+  for(size_t i=0;i<col-1;++i)
+    std::cerr<<" ";
+  std::cerr<<"^"<<std::endl;
+  std::exit(EXIT_FAILURE);
+}
+
+pToken tokenize::next_token()noexcept{
   first=get_token();
   return first;
 }
 
-pToken tokenize::top()noexcept(false){
+pToken tokenize::top()noexcept{
   return first;
 }
 
-pToken tokenize::get_number() noexcept(false) {
+pToken tokenize::get_number() noexcept {
   // \d+, \d+., \d+.\d+, .\d+
   // 0x[\dA-Fa-f]+
   // 0b[01]+
@@ -99,12 +112,12 @@ ENDofLITERAL:
     case Float: return{token_t::FLOAT, ret}; break;
     case Exp: return{token_t::FLOAT, ret}; break;
     default:
-      throw except::INVALID_TOKEN;
+      error_exit(__func__+std::string(" : 数値の解析に失敗しました"));
   }
   return{token_t::DECIMAL,ret};
 }
 
-pToken tokenize::get_ident()noexcept(true){
+pToken tokenize::get_ident()noexcept{
   const token_t is_reserverd = istr[0]=='\\'?token_t::RESERVED:token_t::IDENT;
   size_t i=1;
   for(;i<istr.size();++i)
@@ -115,12 +128,22 @@ pToken tokenize::get_ident()noexcept(true){
   return{is_reserverd,ret};
 }
 
-pToken tokenize::get_token()noexcept(false){
-  { // space skip
-    auto itr=istr.begin();
-    while(itr!=istr.end()&&std::isspace(*itr)) ++itr;
-    if(itr==istr.end()) return {token_t::EMPTY,std::string_view()};
-    istr=std::string_view(itr,istr.end());
+pToken tokenize::get_token()noexcept{
+  { // skip space and comment
+    bool is_comment;
+    do{
+      is_comment=false;
+      auto itr=istr.begin();
+      while(itr!=istr.end()&&std::isspace(*itr)){
+        if(*itr=='\r'&&itr+1!=istr.end()&&*(itr+1)=='\n') ++itr;
+        if(*itr=='\n'||*itr=='\r') ++row,col=1;
+        ++itr,++col;
+      }
+      if(is_comment=(itr!=istr.end()&&*itr=='#'))
+        while(itr!=istr.end()&&(*itr!='\n'&&*itr!='\r')) ++itr;
+      istr=std::string_view(itr,istr.end());
+      if(itr==istr.end()) return {token_t::EMPTY,std::string_view()};
+    }while(is_comment);
   }
   if(std::isdigit(istr[0])) 
     return get_number();
@@ -143,8 +166,7 @@ pToken tokenize::get_token()noexcept(false){
     case '|': if(istr.size()>1&&istr[1]=='|') cnt=2; break;
     case '}': break;
     default:
-      std::cerr<<static_cast<char>(istr[0])<<"は無効な記号です"<<std::endl;
-      exit(EXIT_FAILURE);
+      error_exit(__func__+std::string(" : ")+istr[0]+"は無効な記号です");
       break;
   }
   std::string_view ret=istr.substr(0,cnt);
