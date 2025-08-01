@@ -29,4 +29,4 @@ expr_t expr_3(tokenize&tok){
     return std::get<bool>(e1)?e2:e3;
   }else return e1;
 }
-}} // namespace EXPR}CALC}
+} } // namespace EXPR}CALC}

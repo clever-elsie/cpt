@@ -43,4 +43,4 @@ expr_t parse_FLOAT(tokenize&tok){
   return expr_t(bfloat(tmp.token));
 }
 
-}} //namespace EXPR}CALC}
+} } //namespace EXPR}CALC}

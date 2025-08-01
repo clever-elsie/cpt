@@ -1,9 +1,6 @@
 #include <iostream>
-#include "input.hpp"
+#include "input/input.hpp"
 #include "calc/top.hpp"
-#include "calc/tokenize.hpp"
-#include "calc/type.hpp"
-
 
 int main(int argc, char**argv){
   std::string src = INPUT::get_all_source_input(argc,argv);

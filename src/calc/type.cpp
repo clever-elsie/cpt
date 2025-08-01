@@ -1,4 +1,6 @@
 #include "type.hpp"
+#include <cstdint>
+
 namespace CALC{
 expr_t operator+=(expr_t&lhs,expr_t&&rhs){
   bool p=std::holds_alternative<bint>(lhs);
@@ -59,11 +61,36 @@ expr_t operator/=(expr_t&lhs,expr_t&&rhs){
   return lhs;
 }
 
+/**
+ * @brief 正の整数の指数のべき乗を計算する
+ */
+expr_t pow(bint lhs, bint rhs){
+  bint ret=1;
+  do{
+    uint64_t r=rhs.convert_to<uint64_t>();
+    rhs>>=64;
+    if(rhs>0) // 続きあり
+      for(char i=0;i<64;++i,r>>=1){
+        if(r&1) ret*=lhs;
+        lhs*=lhs;
+      }
+    else{ // このループで終了
+      for(;r;r>>=1){
+        if(r&1) ret*=lhs;
+        lhs*=lhs;
+      }
+      break;
+    }
+  }while(1);
+  return ret;
+}
+
 expr_t pow(const expr_t&lhs, const expr_t& rhs){
   bool l=holds_alternative<bint>(lhs);
   bool r=holds_alternative<bint>(rhs);
-  return mp::pow(l?static_cast<bfloat>(get<bint>(lhs)):get<bfloat>(lhs),
-    r?static_cast<bfloat>(get<bint>(rhs)):get<bfloat>(rhs));
+  if(l&&r&&std::get<bint>(rhs)>0)
+    return pow(get<bint>(lhs),get<bint>(rhs));
+  return mp::pow(l?(bfloat)get<bint>(lhs):get<bfloat>(lhs),r?(bfloat)get<bint>(rhs):get<bfloat>(rhs));
 }
 
 bool operator==(expr_t&lhs,expr_t&rhs){
