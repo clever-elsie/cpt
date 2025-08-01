@@ -2,13 +2,13 @@
 
 namespace CALC{namespace EXPR{
 
-expr_t parse_DECIMAL(tokenize&tok)noexcept(true){
+expr_t parse_DECIMAL(tokenize&tok){
   pToken tmp=tok.top();
   tok.next_token();
   return expr_t(bint(tmp.token));
 }
 
-expr_t parse_BINARY(tokenize&tok)noexcept(true){
+expr_t parse_BINARY(tokenize&tok){
   // 0b{0,1}+ -> HEX
   std::string_view token=tok.top().token;
   size_t rem=(token.size()-2)&0b11;
@@ -31,13 +31,13 @@ expr_t parse_BINARY(tokenize&tok)noexcept(true){
   return expr_t(bint(hex));
 }
 
-expr_t parse_HEX(tokenize&tok)noexcept(true){
+expr_t parse_HEX(tokenize&tok){
   std::string_view number=tok.top().token;
   tok.next_token();
   return bint(number);
 }
 
-expr_t parse_FLOAT(tokenize&tok)noexcept(true){
+expr_t parse_FLOAT(tokenize&tok){
   pToken tmp=tok.top();
   tok.next_token();
   return expr_t(bfloat(tmp.token));

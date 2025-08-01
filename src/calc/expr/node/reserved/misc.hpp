@@ -2,15 +2,13 @@
 #include <optional>
 namespace CALC{namespace EXPR{
 
-inline expr_t get_arg(tokenize&tok)noexcept(false){
+inline expr_t get_arg(tokenize&tok){
   expr_t arg;
   if(tok.top().type==token_t::SYMBOL&&tok.top().token=="("){
     tok.next_token();
     arg=expr(tok);
-    if(tok.top().type!=token_t::SYMBOL||tok.top().token!=")"){
-      std::cerr<<"かっこが閉じられていません"<<std::endl;
-      exit(EXIT_FAILURE);
-    }
+    if(tok.top().type!=token_t::SYMBOL||tok.top().token!=")")
+      tok.error_exit(__func__+std::string(" : かっこが閉じられていません"));
     tok.next_token();
   }else arg=term(tok);
   if(std::holds_alternative<bool>(arg))
@@ -21,31 +19,21 @@ inline expr_t get_arg(tokenize&tok)noexcept(false){
 // first.token=='_'の状態で使う
 inline std::pair<std::string,expr_t> get_below_with_declare(tokenize&tok)noexcept(false){
   tok.next_token(); // _を消費
-  if(tok.top().token!="{"){
-    std::cerr<<"下付き引数には{}が必要です"<<std::endl;
-    exit(EXIT_FAILURE);
-  }
+  if(tok.top().token!="{")
+    tok.error_exit(__func__+std::string(" : 下付き引数には{}が必要です"));
   tok.next_token(); // {を消費
-  if(tok.top().type!=token_t::IDENT){
-    std::cerr<<"変数が必要です"<<std::endl;
-    exit(EXIT_FAILURE);
-  }
+  if(tok.top().type!=token_t::IDENT)
+    tok.error_exit(__func__+std::string(" : 変数が必要です"));
   const std::string name(tok.top().token);
   tok.next_token(); // 変数名を消費
-  if(tok.top().token!="="){
-    std::cerr<<"変数は初期化してください"<<std::endl;
-    exit(EXIT_FAILURE);
-  }
+  if(tok.top().token!="=")
+    tok.error_exit(__func__+std::string(" : 変数は初期化してください"));
   tok.next_token(); // =を消費
   expr_t init=expr(tok);
-  if(!std::holds_alternative<bint>(init)){
-    std::cerr<<"ループ変数の初期値は整数である必要があります"<<std::endl;
-    exit(EXIT_FAILURE);
-  }
-  if(tok.top().token!="}"){
-    std::cerr<<"下付き引数の{}が閉じられていません"<<std::endl;
-    exit(EXIT_FAILURE);
-  }
+  if(!std::holds_alternative<bint>(init))
+    tok.error_exit(__func__+std::string(" : ループ変数の初期値は整数である必要があります"));
+  if(tok.top().token!="}")
+    tok.error_exit(__func__+std::string(" : 下付き引数の{}が閉じられていません"));
   tok.next_token();
   var_map[name].push_back(init);
   return {std::move(name),std::move(init)};
@@ -56,10 +44,8 @@ inline expr_t get_idx(tokenize&tok)noexcept(false){
   if(tok.top().token=="{"){
     tok.next_token();
     expr_t init=expr(tok);
-    if(tok.top().token!="}"){
-      std::cerr<<"下付き引数の{}が閉じられていません"<<std::endl;
-      exit(EXIT_FAILURE);
-    }
+    if(tok.top().token!="}")
+      tok.error_exit(__func__+std::string(" : 下付き引数の{}が閉じられていません"));
     tok.next_token();
     return init;
   }

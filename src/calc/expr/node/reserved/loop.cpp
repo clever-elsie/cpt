@@ -3,29 +3,20 @@
 namespace CALC{namespace EXPR{
 
 template<auto op>
-expr_t loop(tokenize&tok,expr_t&&ret)noexcept(false){
+expr_t loop(tokenize&tok,expr_t&&ret){
   std::optional<expr_t> e;
   std::optional<std::pair<std::string,expr_t>> b;
   for(int i=0;i<2;++i){
     if(tok.top().token=="^"){
-      if(e.has_value()){
-        std::cerr<<"上付きが多すぎます"<<std::endl;
-        exit(EXIT_FAILURE);
-      }
+      if(e.has_value()) tok.error_exit(__func__+std::string(" : 上付きが多すぎます"));
       e=get_idx(tok);
     }else if(tok.top().token=="_"){
-      if(b.has_value()){
-        std::cerr<<"下付きが多すぎます"<<std::endl;
-        exit(EXIT_FAILURE);
-      }
+      if(b.has_value()) tok.error_exit(__func__+std::string(" : 下付きが多すぎます"));
       b=get_below_with_declare(tok);
     }
   }
-  if(!e.has_value()||!b.has_value()){
-    if(!b.has_value()) std::cerr<<"開始条件がありません．"<<std::endl;
-    if(!e.has_value()) std::cerr<<"終了条件がありません．"<<std::endl;
-    exit(EXIT_FAILURE);
-  }
+  if(!b.has_value()) tok.error_exit(__func__+std::string(" : 開始条件がありません．"));
+  if(!e.has_value()) tok.error_exit(__func__+std::string(" : 終了条件がありません．"));
   auto&itr=var_map[b.value().first].back();
   while(itr<=e.value()){
     expr_t value;
@@ -43,10 +34,10 @@ expr_t loop(tokenize&tok,expr_t&&ret)noexcept(false){
   return ret;
 }
 
-expr_t sum(tokenize&tok)noexcept(false){
+expr_t sum(tokenize&tok){
   return loop<[](expr_t&lhs,expr_t&&rhs){return lhs+=std::move(rhs);}>(tok,bint(0));
 }
-expr_t prod(tokenize&tok)noexcept(false){
+expr_t prod(tokenize&tok){
   return loop<[](expr_t&lhs,expr_t&&rhs){return lhs*=std::move(rhs);}>(tok,bint(1));
 }
 

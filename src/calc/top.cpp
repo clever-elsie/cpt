@@ -8,7 +8,7 @@
 
 namespace CALC{
 
-bool define_fn(tokenize&tok);
+void define_fn(tokenize&tok);
 expr_t define_var(tokenize&tok);
 expr_t second(tokenize&tok,bool is_fn);
 
@@ -30,11 +30,8 @@ expr_t second(tokenize&tok,bool is_fn){
     try{
       if(tok.top().token=="let") hold=define_var(tok);
       else if(tok.top().token=="def"){
-        if(is_fn){
-          std::cerr<<"関数の定義は関数内では行えません"<<std::endl;
-          exit(EXIT_FAILURE);
-        }
-        if(!define_fn(tok)) exit(EXIT_FAILURE);
+        if(is_fn) tok.error_exit(__func__+std::string(" : 関数の定義は関数内では行えません"));
+        define_fn(tok);
       }else hold=EXPR::expr(tok);
     }catch(const except&e){
       if(e==except::EMPTY) break;
@@ -59,87 +56,69 @@ ident_error check_ident(std::string_view ident){
   return ident_error::OK;
 }
 
-void error_ident(ident_error err,bool is_fn){
+std::string error_ident(ident_error err,bool is_fn){
   switch(err){
     case ident_error::EMPTY:
-      std::cerr<<"項が空文字列です"<<std::endl;
-      break;
+      return "項が空文字列です";
     case ident_error::RESERVED:
-      std::cerr<<"予約語を使用する"<<(is_fn?"関数名":"変数名")<<"は使えません"<<std::endl;
-      break;
+      return "予約語を使用する"+std::string(is_fn?"関数名":"変数名")+"は使えません";
     case ident_error::FN:
-      if(is_fn) std::cerr<<"関数名が重複しています"<<std::endl;
-      else std::cerr<<"関数名と重複する変数名は使えません"<<std::endl;
-      break;
-    default:
-      std::cerr<<"不明なエラー"<<std::endl;
-      break;
+      if(is_fn) return "関数名が重複しています";
+      else return "関数名と重複する変数名は使えません";
+    default: break;
   }
-  exit(EXIT_FAILURE);
+  return "不明なエラー";
 }
 
 expr_t define_var(tokenize&tok){
   tok.next_token();
-  if(tok.top().type!=token_t::IDENT){
-    std::cerr<<"変数名に使えない文字列が含まれてるかもね"<<std::endl;
-    return false;
-  }
+  if(tok.top().type!=token_t::IDENT)
+    tok.error_exit(__func__+std::string(" : 変数名に使えない文字列が含まれてるかもね"));
   std::string_view variable=tok.top().token;
-  if(check_ident(variable)!=ident_error::OK) error_ident(check_ident(variable),false);
+  if(auto err=check_ident(variable);err!=ident_error::OK)
+    tok.error_exit(__func__+std::string(" : ")+error_ident(err,false));
   tok.next_token();
-  if(tok.top().type!=token_t::SYMBOL||tok.top().token!="="){
-    std::cerr<<"代入文では代入してください．"<<std::endl;
-    return false;
-  }
+  if(tok.top().type!=token_t::SYMBOL||tok.top().token!="=")
+    tok.error_exit(__func__+std::string(" : 代入文では代入してください．"));
   tok.next_token();
   expr_t value=EXPR::expr(tok); // 例外は上へ
   if(auto itr=EXPR::var_map.find(variable);itr==EXPR::var_map.end())
     EXPR::var_map.emplace(variable,std::vector<expr_t>{std::move(value)});
   else itr->second.push_back(std::move(value));
-  return true;
+  return value;
 }
 
-bool define_fn(tokenize&tok){
+void define_fn(tokenize&tok){
   tok.next_token();
   // def fn_name(arg1,...) { ... }
   // ブロック内部はパースせず，引数名と変数名のみ保存する
   // {でcnt++, }でcnt--，cnt==0で関数終了
   // 文法違反の時はUB
-  if(tok.top().type!=token_t::IDENT){
-    std::cerr<<"関数名に使えない文字列が含まれてるかもね"<<std::endl;
-    return false;
-  }
+  if(tok.top().type!=token_t::IDENT)
+    tok.error_exit(__func__+std::string(" : 関数名に使えない文字列が含まれてるかもね"));
   std::string_view fn_name=tok.top().token;
   if(check_ident(fn_name)!=ident_error::OK) error_ident(check_ident(fn_name),true);
   std::set<std::string_view,CALC_MAP::StringEqual> Sargs,Svars;
   std::vector<std::string_view> args,vars;
   std::string body;
   tok.next_token();
-  if(tok.top().type!=token_t::SYMBOL||tok.top().token!="("){
-    std::cerr<<"関数の引数は()で囲んでください"<<std::endl;
-    return false;
-  }
+  if(tok.top().type!=token_t::SYMBOL||tok.top().token!="(")
+    tok.error_exit(__func__+std::string(" : 関数の引数は()で囲んでください"));
   tok.next_token();
   while(tok.top().type==token_t::IDENT){
     if(check_ident(tok.top().token)!=ident_error::OK) error_ident(check_ident(tok.top().token),false);
-    if(!Sargs.emplace(tok.top().token).second){
-      std::cerr<<"関数"<<fn_name<<"の引数名が重複しています"<<std::endl;
-      return false;
-    }
+    if(!Sargs.emplace(tok.top().token).second)
+      tok.error_exit(__func__+std::string(" : 関数")+std::string(fn_name)+"の引数名が重複しています");
     args.push_back(tok.top().token);
     tok.next_token();
     if(tok.top().type==token_t::SYMBOL&&tok.top().token==",") tok.next_token();
     else break;
   }
-  if(tok.top().type!=token_t::SYMBOL||tok.top().token!=")"){
-    std::cerr<<"関数の引数は()で囲んでください"<<std::endl;
-    return false;
-  }
+  if(tok.top().type!=token_t::SYMBOL||tok.top().token!=")")
+    tok.error_exit(__func__+std::string(" : 関数の引数は()で囲んでください"));
   tok.next_token();
-  if(tok.top().type!=token_t::SYMBOL||tok.top().token!="{"){
-    std::cerr<<"関数の定義は{}で囲んでください"<<std::endl;
-    return false;
-  }
+  if(tok.top().type!=token_t::SYMBOL||tok.top().token!="{")
+    tok.error_exit(__func__+std::string(" : 関数の定義は{}で囲んでください"));
   tok.next_token();
   size_t cnt=1;
   bool is_var=false;
@@ -149,15 +128,10 @@ bool define_fn(tokenize&tok){
     if(is_var){
       if(tok.top().type==token_t::IDENT){
         if(check_ident(tok.top().token)!=ident_error::OK) error_ident(check_ident(tok.top().token),false);
-        if(!Svars.emplace(tok.top().token).second){
-          std::cerr<<"関数"<<fn_name<<"の変数名が重複しています"<<std::endl;
-          return false;
-        }
+        if(!Svars.emplace(tok.top().token).second)
+          tok.error_exit(__func__+std::string(" : 関数")+std::string(fn_name)+"の変数名が重複しています");
         vars.push_back(tok.top().token);
-      }else{
-        std::cerr<<"変数名に使えない文字列が含まれてるかもね"<<std::endl;
-        return false;
-      }
+      }else tok.error_exit(__func__+std::string(" : 変数名に使えない文字列が含まれてるかもね"));
       is_var=false;
     }
     if(tok.top().token=="let") is_var=true;
@@ -166,11 +140,8 @@ bool define_fn(tokenize&tok){
     body.push_back(' ');
     tok.next_token();
   }
-  if(cnt!=0){
-    std::cerr<<"関数"<<fn_name<<"の定義が閉じられていません"<<std::endl;
-    return false;
-  }else tok.next_token();
+  if(cnt!=0) tok.error_exit(__func__+std::string(" : 関数")+std::string(fn_name)+"の定義が閉じられていません");
+  tok.next_token();
   EXPR::fn_map.emplace(fn_name,CALC_MAP::Fn(std::move(args),std::move(vars),std::move(body)));
-  return true;
 }
 }// namespace CALC

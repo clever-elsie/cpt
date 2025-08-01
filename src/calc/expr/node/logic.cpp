@@ -2,57 +2,45 @@
 #include "../../tokenize.hpp"
 #include "../node.hpp"
 namespace CALC{namespace EXPR{
-expr_t or_expr(tokenize&tok) noexcept(false) {
+expr_t or_expr(tokenize&tok) {
   expr_t value=and_expr(tok);
   if(tok.top().type==token_t::SYMBOL
     && (tok.top().token=="||"||tok.top().token=="|")
   ){
-    if(!std::holds_alternative<bool>(value)){
-      std::cerr<<"論理和論理式にしか使えません"<<std::endl;
-      exit(EXIT_FAILURE);
-    }
-    if(get<bool>(value))
-      return expr_t(true);
+    if(!std::holds_alternative<bool>(value))
+      tok.error_exit(__func__+std::string(" : 論理和は論理式にしか使えません"));
+    if(std::get<bool>(value)) return expr_t(true);
   }else return value;
   while(tok.top().type==token_t::SYMBOL
     && (tok.top().token=="||"||tok.top().token=="|")
   ){
     tok.next_token();
     value=and_expr(tok);
-    if(!std::holds_alternative<bool>(value)){
-      std::cerr<<"論理和論理式にしか使えません"<<std::endl;
-      exit(EXIT_FAILURE);
-    }
-    if(std::get<bool>(value))
-      return expr_t(true);
+    if(!std::holds_alternative<bool>(value))
+      tok.error_exit(__func__+std::string(" : 論理和は論理式にしか使えません"));
+    if(std::get<bool>(value)) return expr_t(true);
   }
   return expr_t(false); 
 }
 
-expr_t and_expr(tokenize&tok) noexcept(false) {
+expr_t and_expr(tokenize&tok) {
   expr_t value=compare(tok);
   if(tok.top().type==token_t::SYMBOL && tok.top().token[0]=='&'){
-    if(!std::holds_alternative<bool>(value)){
-      std::cerr<<"論理積は論理式にしか使えません"<<std::endl;
-      exit(EXIT_FAILURE);
-    }
-    if(!std::get<bool>(value))
-      return expr_t(false);
+    if(!std::holds_alternative<bool>(value))
+      tok.error_exit(__func__+std::string(" : 論理積は論理式にしか使えません"));
+    if(!std::get<bool>(value)) return expr_t(false);
   }else return value;
   while(tok.top().type==token_t::SYMBOL && tok.top().token[0]=='&'){
     tok.next_token();
     value=compare(tok);
-    if(!std::holds_alternative<bool>(value)){
-      std::cerr<<"論理積は論理式にしか使えません"<<std::endl;
-      exit(EXIT_FAILURE);
-    }
-    if(!std::get<bool>(value))
-      return expr_t(false);
+    if(!std::holds_alternative<bool>(value))
+      tok.error_exit(__func__+std::string(" : 論理積は論理式にしか使えません"));
+    if(!std::get<bool>(value)) return expr_t(false);
   }
   return expr_t(true);
 }
 
-expr_t compare(tokenize&tok) noexcept(false) {
+expr_t compare(tokenize&tok) {
   expr_t lhs=algebra(tok);
   if(tok.top().type==token_t::SYMBOL
     &&(tok.top().token[0]=='<' || tok.top().token[0]=='>'

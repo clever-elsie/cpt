@@ -2,7 +2,7 @@
 #include "misc.hpp"
 namespace CALC{namespace EXPR{
 
-expr_t abs(tokenize&tok)noexcept(false){
+expr_t abs(tokenize&tok){
   expr_t arg=get_arg(tok);
   if(std::holds_alternative<bint>(arg)){
     if(std::get<bint>(arg)<0) arg=-std::get<bint>(arg);
@@ -11,20 +11,14 @@ expr_t abs(tokenize&tok)noexcept(false){
   return mp::abs(std::get<bfloat>(arg));
 }
 
-expr_t log(tokenize&tok)noexcept(false){
+expr_t log(tokenize&tok){
   std::optional<expr_t> e,b;
   for(int i=0;i<2;++i){
     if(tok.top().token=="_"){
-      if(b.has_value()){
-        std::cerr<<"下付きが多すぎます"<<std::endl;
-        exit(EXIT_FAILURE);
-      }
+      if(b.has_value()) tok.error_exit(__func__+std::string(" : 下付きが多すぎます"));
       b=get_idx(tok);
     }else if(tok.top().token=="^"){
-      if(e.has_value()){
-        std::cerr<<"上付きが多すぎます"<<std::endl;
-        exit(EXIT_FAILURE);
-      }
+      if(e.has_value()) tok.error_exit(__func__+std::string(" : 上付きが多すぎます"));
       e=get_idx(tok);
     }else break;
   }
@@ -44,7 +38,7 @@ expr_t log(tokenize&tok)noexcept(false){
 }
 
 template<auto pred>
-expr_t powerable(tokenize&tok)noexcept(false){
+expr_t powerable(tokenize&tok){
   std::optional<expr_t> e{};
   if(tok.top().token=="^") e=get_idx(tok);
   expr_t arg=get_arg(tok);
