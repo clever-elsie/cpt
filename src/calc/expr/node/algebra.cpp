@@ -47,15 +47,10 @@ expr_t term(tokenize&tok) {
         if(L&&R){
           bint q,r;
           divide_qr(std::get<bint>(lhs),std::get<bint>(rhs),q,r);
-          if(Z=(r==0)) std::get<bint>(lhs)=q;
-        }
-        if(!Z){
-          if(L)
-            lhs=expr_t(static_cast<bfloat>(std::get<bint>(lhs))
-              /(R?static_cast<bfloat>(std::get<bint>(rhs)):std::get<bfloat>(rhs)));
-          else
-            lhs/=R?static_cast<bfloat>(std::get<bint>(rhs)):std::get<bfloat>(rhs);
-        }
+          std::get<bint>(lhs)=q;
+        }else
+          if(L) lhs=(bfloat)std::get<bint>(lhs)/std::get<bfloat>(rhs);
+          else lhs/=R?static_cast<bfloat>(std::get<bint>(rhs)):std::get<bfloat>(rhs);
       }
     }else
       try{ lhs*=factor(tok);
