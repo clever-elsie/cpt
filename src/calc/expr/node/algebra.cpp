@@ -67,6 +67,15 @@ expr_t factor(tokenize&tok) {
     tok.next_token();
     expr_t rhs=factor(tok);
     return pow(lhs,rhs);
+  }else if(tok.top().token=="!"){
+    if(!std::holds_alternative<bint>(lhs))
+      tok.error_exit(__func__+std::string(" : 階乗は整数のみ計算できます"));
+    while(tok.top().token=="!"){
+      tok.next_token();
+      bint counter=std::get<bint>(lhs);
+      if(counter<0) tok.error_exit(__func__+std::string(" : 階乗は負数には計算できません"));
+      while(counter>1) lhs*=--counter;
+    }
   }
   return lhs;
 }
