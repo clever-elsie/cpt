@@ -9,8 +9,8 @@ expr_t algebra(tokenize&tok) {
     std::string_view op=tok.top().token;
     tok.next_token();
     expr_t rhs=term(tok);
-    if(op=="+") lhs+=std::move(rhs);
-    else lhs-=std::move(rhs);
+    if(op=="+") lhs+=rhs;
+    else lhs-=rhs;
   }
   return lhs;
 }
@@ -27,7 +27,7 @@ expr_t term(tokenize&tok) {
       expr_t rhs=factor(tok);
       if(std::holds_alternative<bool>(rhs)) rhs=expr_t(bint((int)std::get<bool>(rhs)));
       if(op=="*")
-        lhs*=std::move(rhs);
+        lhs*=rhs;
       else if(op=="%"){
         if(std::holds_alternative<bint>(lhs)&&std::holds_alternative<bint>(rhs)){
           if(std::get<bint>(rhs)==0)
@@ -35,7 +35,7 @@ expr_t term(tokenize&tok) {
           std::get<bint>(lhs)/=std::get<bint>(rhs);
         }else tok.error_exit(__func__+std::string(" : 整数以外の型では剰余演算はできません"));
       }else if(op=="/")
-        lhs/=std::move(rhs);
+        lhs/=rhs;
       else if(op=="//"){
         bool Z=false;
         if(std::holds_alternative<bint>(rhs)){

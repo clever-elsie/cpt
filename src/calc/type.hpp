@@ -24,12 +24,20 @@ using bint=mp::cpp_int;
 using bfloat=mp::cpp_dec_float_50;
 using expr_t = std::variant<bint,bfloat,bool>;
 
+expr_t operator+=(expr_t&lhs,expr_t&rhs);
 expr_t operator+=(expr_t&lhs,expr_t&&rhs);
+expr_t operator-=(expr_t&lhs,expr_t&rhs);
 expr_t operator-=(expr_t&lhs,expr_t&&rhs);
+expr_t operator*=(expr_t&lhs,expr_t&rhs);
 expr_t operator*=(expr_t&lhs,expr_t&&rhs);
+expr_t operator/=(expr_t&lhs,expr_t&rhs);
 expr_t operator/=(expr_t&lhs,expr_t&&rhs);
-bool operator==(expr_t&lhs,expr_t&rhs);
-bool operator<(expr_t&lhs,expr_t rhs);
-expr_t pow(const expr_t&lhs, const expr_t& rhs);
-
+expr_t operator%=(expr_t&lhs,expr_t&rhs);
+expr_t operator%=(expr_t&lhs,expr_t&&rhs);
+bool operator==(const expr_t&lhs,const expr_t&rhs);
+bool operator<(const expr_t&lhs,const expr_t&rhs);
+bool operator&&(const expr_t&lhs,const expr_t&rhs);
+bool operator||(const expr_t&lhs,const expr_t&rhs);
+expr_t pow(expr_t&lhs, expr_t&rhs);
+bool to_bool(const expr_t&value);
 }// namespace CALC
