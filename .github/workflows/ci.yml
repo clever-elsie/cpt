@@ -19,23 +19,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y g++-14 cmake libboost-all-dev
         
-    - name: Build project
-      run: |
-        make clean
-        make
-        
-    - name: Run tests
-      run: |
-        chmod +x scripts/test-runner.sh
-        make test
-        
-    - name: Build with CMake
+    - name: Build and test with CMake
       run: |
         mkdir -p build
-        cmake -S . -B build
+        cmake -S . -B build -DCMAKE_CXX_STANDARD=23
         cmake --build build
-        
-    - name: Test CMake build
-      run: |
+        chmod +x scripts/test-runner.sh
         cd build
         ../scripts/test-runner.sh 

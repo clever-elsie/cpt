@@ -28,14 +28,18 @@ else
     exit 1
 fi
 
-# testディレクトリが存在するかチェック
-if [ ! -d "test" ]; then
+# testディレクトリが存在するかチェック（現在のディレクトリまたは親ディレクトリを確認）
+if [ -d "test" ]; then
+    TEST_DIR="test"
+elif [ -d "../test" ]; then
+    TEST_DIR="../test"
+else
     print_error "testディレクトリが見つかりません。"
     exit 1
 fi
 
 # test/*.inファイルを検索
-input_files=$(find test -name "*.in" -type f | sort)
+input_files=$(find $TEST_DIR -name "*.in" -type f | sort)
 
 if [ -z "$input_files" ]; then
     print_error "test/*.inファイルが見つかりません。"
