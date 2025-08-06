@@ -14,14 +14,12 @@ expr_t Nstat::evaluate(std::vector<expr_t>&&args){
     result=item->get_value();
   for(auto&&arg:this->args){
     auto&v=var_map[arg];
-    if(v.empty())
-      throw std::runtime_error("引数の数が一致しません");
+    if(v.empty()) throw std::runtime_error("引数の数が一致しません");
     v.pop_back();
   }
   for(auto&&var:var_names){
     auto&v=var_map[var];
-    if(v.empty())
-      throw std::runtime_error("引数の数が一致しません");
+    if(v.empty()) throw std::runtime_error("引数の数が一致しません");
     v.pop_back();
   }
   return result;

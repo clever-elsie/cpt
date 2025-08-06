@@ -18,8 +18,12 @@ print_info() {
     echo -e "\033[34mℹ $1\033[0m"
 }
 
-# cpt実行ファイルが存在するかチェック
-if [ ! -f "./cpt" ]; then
+# cpt実行ファイルが存在するかチェック（現在のディレクトリまたは親ディレクトリを確認）
+if [ -f "./cpt" ]; then
+    CPT_EXEC="./cpt"
+elif [ -f "../cpt" ]; then
+    CPT_EXEC="../cpt"
+else
     print_error "cpt実行ファイルが見つかりません。先にビルドしてください。"
     exit 1
 fi
@@ -66,7 +70,7 @@ for input_file in $input_files; do
     temp_output=$(mktemp)
     
     # cptでテストを実行
-    if ./cpt < "$input_file" > "$temp_output" 2>&1; then
+    if $CPT_EXEC < "$input_file" > "$temp_output" 2>&1; then
         # 出力を比較
         if diff -q "$temp_output" "$output_file" > /dev/null 2>&1; then
             print_success "テスト $test_name が成功しました"

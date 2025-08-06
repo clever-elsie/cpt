@@ -8,7 +8,7 @@ namespace EXPR{
 
 std::vector<AST::Nitem*> get_args(tokenize&tok){
   std::vector<AST::Nitem*> args;
-  if(tok.top().token!="(") tok.error_throw(__func__+std::string(" : 関数呼び出しの引数が()で囲まれていません"));
+  if(tok.top().token!="(") tok.error_throw(__func__+std::string(" : 関数呼び出しの引数が(で囲まれていません"));
   tok.next_token(); // (を消費
   while(true){
     args.push_back(expr(tok));
@@ -16,7 +16,7 @@ std::vector<AST::Nitem*> get_args(tokenize&tok){
     else if(tok.top().token==")") break;
     else tok.error_throw(__func__+std::string(" : 関数呼び出しの引数が,で区切られていません"));
   }
-  if(tok.top().token!=")") tok.error_throw(__func__+std::string(" : 関数呼び出しの引数が()で囲まれていません"));
+  if(tok.top().token!=")") tok.error_throw(__func__+std::string(" : 関数呼び出しの引数が)で囲まれていません"));
   tok.next_token();
   return args;
 }
@@ -52,8 +52,8 @@ AST::Nitem* function_call(tokenize&tok){
   tok.next_token(); // 関数名を消費
   // 上付きべき乗があるときはpowのノードを作成する
   auto [row,col]=tok.get_pos();
-  AST::Nfn* ret=new AST::Nfn(row,col,name,get_args(tok));
   auto [exp,below]=get_right_args<false>(tok);
+  AST::Nfn* ret=new AST::Nfn(row,col,name,get_args(tok));
   if(below!=nullptr) throw std::runtime_error("関数"+std::string(name)+"に下付きの引数はありません");
   if(exp!=nullptr) return new AST::Nexpr(row,col,AST::op_t::POW,ret,exp);
   return ret;
@@ -121,10 +121,8 @@ AST::Nitem* atom(tokenize&tok) {
   if(token_t::EMPTY==tok.top().type)
     tok.error_throw(__func__+std::string(" : 項が空文字列です"));
   else if(token_t::IDENT==tok.top().type){
-    if(auto ftr=AST::fn_map.find(tok.top().token);ftr!=AST::fn_map.end()){ // 関数
-      tok.next_token(); // 関数名を消費
+    if(auto ftr=AST::fn_map.find(tok.top().token);ftr!=AST::fn_map.end()) // 関数
       return function_call(tok);
-    }
     // 変数
     auto [row,col]=tok.get_pos();
     AST::Nitem* ret=new AST::Nvar(row,col,tok.top().token);

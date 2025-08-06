@@ -1,0 +1,7 @@
+let land1 = 1&0;
+let land2 = 1&&1;
+let lor1 = 0|1;
+let lor2 = 0||0;
+let logicChain = 1&&0||1;
+
+\print(land1, land2, lor1, lor2, logicChain); 

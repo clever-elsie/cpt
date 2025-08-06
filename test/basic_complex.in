@@ -1,0 +1,9 @@
+let cmpLogic = 1<2 & 2<3 | 3==3;
+let cmpChain = 1<2<3<4;
+
+def add1(a){ a+1; }
+
+let powfn = add1(2)^3;
+let powfn2 = add1^3(2);
+
+\print(cmpLogic, cmpChain, powfn, powfn2);

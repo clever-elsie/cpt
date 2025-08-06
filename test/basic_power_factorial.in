@@ -1,0 +1,6 @@
+let pow1 = 2^3;
+let pow2 = 2**4;
+let fact1 = 5!;
+let fact2 = (3+2)!;
+
+\print(pow1, pow2, fact1, fact2); 

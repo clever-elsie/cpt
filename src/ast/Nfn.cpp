@@ -20,8 +20,6 @@ expr_t Nfn::get_value(){
   for(auto&&arg:this->args)
     args.push_back(arg->get_value());
   expr_t ret=fn_stat->evaluate(std::move(args));
-  for(auto&&arg:fn_stat->args) var_map[arg].pop_back();
-  for(auto&&var:fn_stat->var_names) var_map[var].pop_back();
   return ret;
 }
 

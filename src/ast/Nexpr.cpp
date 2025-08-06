@@ -3,7 +3,7 @@
 namespace AST{
 
 constexpr static inline id_t get_id(op_t op){
-  if(op==op_t::NOP) throw std::runtime_error("無効な演算子");
+  if(op==op_t::NOP) throw std::runtime_error("無効な演算子 (op==NOP)");
   switch(op){
     case op_t::NOT: case op_t::NEG:
     case op_t::FACT: return id_t::uop; // 階乗
@@ -11,21 +11,27 @@ constexpr static inline id_t get_id(op_t op){
     case op_t::ADD: case op_t::SUB:
     case op_t::MUL: case op_t::POW:
     case op_t::FDIV: case op_t::IDIV:
-    case op_t::MOD: return id_t::bop;
+    case op_t::MOD:
+    case op_t::ASSIGN: return id_t::bop;
     case op_t::EQ: // 比較演算子は連鎖評価するためにtopとして扱う
     case op_t::NE: // 1<x<2のときxを一度の評価でいいようにthsに次の式を入れる
     case op_t::LT: // thsで参照された式では前項のrhsをlhsとして扱う
     case op_t::GT: case op_t::LE: case op_t::GE:
     case op_t::BR: return id_t::top; // 条件分岐?:
   }
-  throw std::runtime_error("無効な演算子");
+  throw std::runtime_error("無効な演算子 (switch default)");
   return id_t::uop; // dead code for no return error of compiler
 }
 
 Nexpr::Nexpr(size_t row, size_t col, op_t op,
   Nitem*lhs, Nitem*rhs, Nitem*ths)
 :Nitem(row,col),lhs(lhs),rhs(rhs),ths(ths),op(op){
-  id=get_id(op);
+  try{
+    id=get_id(op);
+  }catch(const std::runtime_error&e){
+    std::cerr<<"Nexpr::Nexpr(row="<<row<<", col="<<col<<": "<<e.what()<<std::endl;
+    throw;
+  }
 }
 
 Nexpr::~Nexpr(){
@@ -37,8 +43,10 @@ expr_t Nexpr::get_value(){
     case id_t::uop: return eval_uop();
     case id_t::bop: return eval_bop();
     case id_t::top: return eval_top();
-    default:
-      throw std::runtime_error("無効な演算子");
+    default: {
+      auto [row, col] = this->get_pos();
+      throw std::runtime_error("無効な演算子 at [row=" + std::to_string(row) + ", col=" + std::to_string(col) + "]");
+    }
   }
   return expr_t(); // dead code
 }
@@ -61,7 +69,10 @@ inline void Nexpr::eval_uop_not(expr_t&value){
     value=std::get<bfloat>(value)!=0;
   if(std::holds_alternative<bool>(value))
     value=!std::get<bool>(value);
-  else throw std::runtime_error("無効な論理否定");
+  else {
+    auto [row, col] = this->get_pos();
+    throw std::runtime_error("無効な論理否定 at [row=" + std::to_string(row) + ", col=" + std::to_string(col) + "]");
+  }
 }
 
 inline void Nexpr::eval_uop_neg(expr_t&value){
@@ -71,14 +82,21 @@ inline void Nexpr::eval_uop_neg(expr_t&value){
     value=-std::get<bint>(value);
   else if(std::holds_alternative<bfloat>(value))
     value=-std::get<bfloat>(value);
-  else throw std::runtime_error("無効な符号反転");
+  else {
+    auto [row, col] = this->get_pos();
+    throw std::runtime_error("無効な符号反転 at [row=" + std::to_string(row) + ", col=" + std::to_string(col) + "]");
+  }
 }
 
 inline void Nexpr::eval_uop_fact(expr_t&value){
-  if(!std::holds_alternative<bint>(value))
-    throw std::runtime_error("階乗は整数値でなければなりません");
-  if(std::get<bint>(value)<0)
-    throw std::runtime_error("階乗は負の整数に対し定義されていません");
+  if(!std::holds_alternative<bint>(value)) {
+    auto [row, col] = this->get_pos();
+    throw std::runtime_error("階乗は整数値でなければなりません at [row=" + std::to_string(row) + ", col=" + std::to_string(col) + "]");
+  }
+  if(std::get<bint>(value)<0) {
+    auto [row, col] = this->get_pos();
+    throw std::runtime_error("階乗は負の整数に対し定義されていません at [row=" + std::to_string(row) + ", col=" + std::to_string(col) + "]");
+  }
   if(std::get<bint>(value)==0) value=bint(1);
   for(bint n=std::get<bint>(value);--n>=2;) std::get<bint>(value)*=n;
 }
@@ -153,15 +171,27 @@ expr_t Nexpr::eval_top(){
   // 比較
   Nexpr*itr=this;
   expr_t lhs_value=lhs->get_value();
-  while(itr->ths!=nullptr){
+  while(itr!=nullptr){
     expr_t rhs_value=itr->rhs->get_value();
     switch(itr->op){
-      case op_t::EQ: if(lhs_value!=rhs_value) return false;
-      case op_t::NE: if(lhs_value==rhs_value) return false;
-      case op_t::LT: if(lhs_value>=rhs_value) return false;
-      case op_t::GT: if(lhs_value<=rhs_value) return false;
-      case op_t::LE: if(lhs_value>rhs_value) return false;
-      case op_t::GE: if(lhs_value<rhs_value) return false;
+      case op_t::EQ:
+        if(lhs_value!=rhs_value) return false;
+        break;
+      case op_t::NE:
+        if(lhs_value==rhs_value) return false;
+        break;
+      case op_t::LT:
+        if(lhs_value>=rhs_value) return false;
+        break;
+      case op_t::GT:
+        if(lhs_value<=rhs_value) return false;
+        break;
+      case op_t::LE:
+        if(lhs_value>rhs_value) return false;
+        break;
+      case op_t::GE:
+        if(lhs_value<rhs_value) return false;
+        break;
     }
     lhs_value=std::move(rhs_value);
     itr=dynamic_cast<Nexpr*>(itr->ths);

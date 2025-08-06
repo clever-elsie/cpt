@@ -1,0 +1,4 @@
+let ternary1 = 1<2?10:20;
+let ternary2 = 2>3?100:200;
+
+\print(ternary1, ternary2); 

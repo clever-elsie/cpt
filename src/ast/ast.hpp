@@ -35,8 +35,7 @@ struct Nitem{
 
 struct Nstat{
   std::vector<Nitem*> items;
-  std::vector<std::string> args;
-  std::vector<std::string> var_names;
+  std::vector<std::string> args,var_names;
   std::unordered_set<std::string,MAP_VAR_FN::StringHash,MAP_VAR_FN::StringEqual> args_set, var_names_set;
   Nstat()=default;
   expr_t evaluate(std::vector<expr_t>&&args);

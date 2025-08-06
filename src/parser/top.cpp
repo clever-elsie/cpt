@@ -33,6 +33,8 @@ void second(tokenize&tok,bool is_fn,AST::Nstat*parent){
       if(e==except::EMPTY) break;
       else throw e;
     }
+    while(tok.top().token==";"||tok.top().token==",")
+      tok.next_token();
     if(tok.top().token=="}") break;
   }
 }
@@ -90,7 +92,8 @@ void define_fn(tokenize&tok){
   if(tok.top().type!=token_t::IDENT)
     tok.error_exit(__func__+std::string(" : 関数名に使えない文字列が含まれてるかもね"));
   std::string_view fn_name=tok.top().token;
-  if(check_ident(fn_name)!=ident_error::OK) error_ident(check_ident(fn_name),true);
+  if(auto err=check_ident(fn_name);err!=ident_error::OK)
+    tok.error_exit(__func__+std::string(" : ")+error_ident(err,true));
   std::unordered_set<std::string,MAP_VAR_FN::StringHash,MAP_VAR_FN::StringEqual> Sargs;
   std::vector<std::string> args;
   AST::Nstat*body=new AST::Nstat();
@@ -99,7 +102,8 @@ void define_fn(tokenize&tok){
     tok.error_exit(__func__+std::string(" : 関数の引数は()で囲んでください"));
   tok.next_token();
   while(tok.top().type==token_t::IDENT){ // 引数
-    if(check_ident(tok.top().token)!=ident_error::OK) error_ident(check_ident(tok.top().token),false);
+    if(auto err=check_ident(tok.top().token);err!=ident_error::OK)
+      tok.error_exit(__func__+std::string(" : ")+error_ident(err,false));
     if(!Sargs.emplace(tok.top().token).second)
       tok.error_exit(__func__+std::string(" : 関数")+std::string(fn_name)+"の引数名が重複しています");
     args.emplace_back(tok.top().token);
@@ -113,11 +117,15 @@ void define_fn(tokenize&tok){
   if(tok.top().type!=token_t::SYMBOL||tok.top().token!="{")
     tok.error_exit(__func__+std::string(" : 関数の定義は{}で囲んでください"));
   tok.next_token(); // {を消費
+  // 先に関数名だけ登録
+  auto [it,success]=AST::fn_map.emplace(fn_name,nullptr);
+  if(!success)
+    tok.error_exit(__func__+std::string(" : 関数")+std::string(fn_name)+"が重複しています");
   second(tok,true,body);
   if(tok.top().token!="}") tok.error_exit(__func__+std::string(" : 関数")+std::string(fn_name)+"の定義が閉じられていません");
   tok.next_token(); // }を消費
   body->args=std::move(args);
   body->args_set=std::move(Sargs);
-  AST::fn_map.emplace(fn_name,body);
+  it->second=body; // 関数の中身を登録
 }
 }// namespace CALC

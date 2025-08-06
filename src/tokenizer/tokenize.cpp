@@ -161,7 +161,9 @@ pToken tokenize::get_token()noexcept{
     return get_ident();
   int cnt=1;
   switch(istr[0]){ // caseは昇順．最適化を信じろ
-    case '!': case '%':break;
+    case '!':
+      if(istr.size()>1&&istr[1]=='=') cnt=2; break;
+    case '%':break;
     case '&':
       if(istr.size()>1&&istr[0]==istr[1]) cnt=2; break;
     case '(': case ')': break;

@@ -1,0 +1,11 @@
+let y = 2;
+def add1(a){ a+1; }
+let z = add1(10);
+
+def fib(n){
+  n<=2?1:fib(n-1)+fib(n-2);
+}
+
+let f=fib(9);
+
+\print(y, z, f); 

@@ -1,0 +1,14 @@
+let integer = 4;
+let binary = 0b101;
+let hex = 0xF;
+let float = 1.4;
+let boolean = 1;
+
+let add = 1+2;
+let sub = 5-3;
+let mul = 2*3;
+let fdiv = 7/2;
+let idiv = 7//2;
+let mod = 7%4;
+
+\print(integer, binary, hex, float, boolean, add, sub, mul, fdiv, idiv, mod); 

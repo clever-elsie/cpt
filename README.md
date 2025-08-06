@@ -131,6 +131,21 @@ pow2(pow2(4))"
 ## ライセンス
 MIT License
 
+## 開発・テスト
+
+### ローカルでのテスト実行
+```sh
+make test
+```
+
+### GitHub Actions
+このプロジェクトはGitHub Actionsで自動テストが設定されています：
+
+- **CI**: 基本的なビルドとテスト（`ci.yml`）
+- **Advanced CI**: 複数コンパイラでのテスト（`ci-advanced.yml`）
+
+プッシュやプルリクエスト時に自動的にテストが実行されます。
+
 ## バグ報告・コントリビュート
 - バグ報告は issue へお願いします。
 - 簡単な修正は pull request を送っていただければ merge します。

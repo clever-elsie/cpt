@@ -68,7 +68,7 @@ expr_t operator%=(expr_t&lhs,expr_t&rhs){
   if(std::holds_alternative<bint>(lhs)&&std::holds_alternative<bint>(rhs)){
     if(std::get<bint>(rhs)==0)
       throw std::runtime_error("ゼロ除算は禁止");
-    std::get<bint>(lhs)/=std::get<bint>(rhs);
+    std::get<bint>(lhs)%=std::get<bint>(rhs);
   }else throw std::runtime_error("整数以外の型では剰余演算はできません");
   return lhs;
 }
