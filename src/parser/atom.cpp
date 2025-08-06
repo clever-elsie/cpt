@@ -63,7 +63,7 @@ AST::Nitem* reserved_function_call(tokenize&tok){
   std::string_view name=tok.top().token;
   // 上付きと下付きが両方あるとき，\sumや\prodでは必ず，上付き，下付きの順番に第一引数，第二引数に入る
   // 下付きだけのlogは第一引数に底を入れる．もし底がないとき，自然対数の底eを底とし，第一引数はnullptrとする．
-  if(name=="log"){ // 下付き特殊
+  if(name=="\\log"){ // 下付き特殊
     tok.next_token();
     auto [row,col]=tok.get_pos();
     auto[exp,base]=get_right_args<false>(tok);
@@ -73,7 +73,7 @@ AST::Nitem* reserved_function_call(tokenize&tok){
     AST::Nitem* ret=new AST::Nfn(row,col,name,std::move(args));
     if(exp!=nullptr) return new AST::Nexpr(row,col,AST::op_t::POW,ret,exp);
     return ret;
-  }else if(name=="sum"||name=="prod"){ // 上下付き特殊
+  }else if(name=="\\sum"||name=="\\prod"){ // 上下付き特殊
     tok.next_token();
     auto [row,col]=tok.get_pos();
     auto[exp,base]=get_right_args<true>(tok);

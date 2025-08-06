@@ -78,7 +78,7 @@ class Ndecl:public Nitem{
 };
 
 class Nvar:public Nitem{
-  std::string_view name;
+  std::string name;
   public:
   Nvar(size_t row,size_t col,std::string_view name);
   virtual expr_t get_value()override;

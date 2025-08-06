@@ -39,11 +39,11 @@ construct_reserved_fnlist(){
   std::sort(list.begin(),list.end());
   return list;
 }
-
+#include <iostream>
 expr_t Nfn::eval_reserved_fn(){
-  std::string_view id=name.substr(1);
+  std::string_view id(name.begin()+1,name.end());
   auto fnlist=construct_reserved_fnlist();
-  auto it=std::lower_bound(fnlist.begin(),fnlist.end(),std::pair<std::string_view,expr_t(*)(std::vector<Nitem*>&)>{id,nullptr});
+  auto it=std::lower_bound(fnlist.begin(),fnlist.end(),id,[](const auto&a,const auto&b){ return a.first<b; });
   if(it==fnlist.end()||it->first!=id) throw std::runtime_error("未定義の予約語");
   try{
     return it->second(args);
