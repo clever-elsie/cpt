@@ -23,6 +23,8 @@ if [ -f "./cpt" ]; then
     CPT_EXEC="./cpt"
 elif [ -f "../cpt" ]; then
     CPT_EXEC="../cpt"
+elif [ -f "build/cpt" ]; then
+    CPT_EXEC="build/cpt"
 else
     print_error "cpt実行ファイルが見つかりません。先にビルドしてください。"
     exit 1

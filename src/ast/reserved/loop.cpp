@@ -12,7 +12,6 @@ expr_t loop(std::vector<Nitem*>&args,expr_t&&init){
   Nstat*fn_loop=new Nstat();
   auto decl=dynamic_cast<Ndecl*>(args[1]);
   if(decl==nullptr) throw std::runtime_error("ループ変数の宣言が見つかりません");
-  decl->move_to(fn_loop); // 宣言をloop関数に移動
   decl->get_value(); // var_mapにループ変数を登録
   auto itr=var_map.find(decl->get_name());
   if(itr==var_map.end()) throw std::runtime_error("ループ変数が見つかりません");
@@ -22,6 +21,7 @@ expr_t loop(std::vector<Nitem*>&args,expr_t&&init){
   fn_loop->items.push_back(args[2]); // ループ内式をloop関数に移動
   for(;itr_value<=upper_value;++itr_value)
     op(init,fn_loop->evaluate({})); // ループ内式を評価
+  itr->second.pop_back();
   return init;
 }
 

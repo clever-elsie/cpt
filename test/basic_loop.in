@@ -1,0 +1,7 @@
+let n=15;
+
+let sumof=\sum_{i=1}^{n} i;
+
+let prodof=\prod_{i=2}^{n} i;
+
+\print(n,sumof,prodof);

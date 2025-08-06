@@ -4,7 +4,10 @@ namespace AST{
 
 Ndecl::Ndecl(std::string_view name,Nitem*init,Nstat*belong_to)
 :name(name),init(init),belong_to(belong_to){
-  is_local_first=belong_to->args_set.contains(name)||belong_to->var_names_set.contains(name);
+  if(belong_to==nullptr)
+    is_local_first=true;
+  else
+    is_local_first=belong_to->args_set.contains(name)||belong_to->var_names_set.contains(name);
 }
 
 Ndecl::~Ndecl(){
@@ -19,12 +22,8 @@ std::string_view Ndecl::get_name()const{
 expr_t Ndecl::get_value(){
   // 初期値を評価．変数テーブルに登録
   expr_t value=init->get_value();
-  if(is_local_first){
-    auto itr=var_map.find(name);
-    if(itr==var_map.end())
-      itr=var_map.emplace(name,std::vector<expr_t>()).first;
-    itr->second.emplace_back(std::move(value));
-  }else{
+  if(is_local_first) var_map[name].emplace_back(std::move(value));
+  else{
     auto itr=var_map.find(name);
     if(itr==var_map.end())
       throw std::runtime_error("変数が見つかりません");

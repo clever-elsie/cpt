@@ -3,10 +3,10 @@
 
 
 expr_t operator+=(expr_t&lhs,expr_t&&rhs){ return lhs+=rhs; }
-expr_t operator-=(expr_t&lhs,expr_t&&rhs){ return lhs+=rhs; }
-expr_t operator*=(expr_t&lhs,expr_t&&rhs){ return lhs+=rhs; }
-expr_t operator/=(expr_t&lhs,expr_t&&rhs){ return lhs+=rhs; }
-expr_t operator%=(expr_t&lhs,expr_t&&rhs){ return lhs+=rhs; }
+expr_t operator-=(expr_t&lhs,expr_t&&rhs){ return lhs-=rhs; }
+expr_t operator*=(expr_t&lhs,expr_t&&rhs){ return lhs*=rhs; }
+expr_t operator/=(expr_t&lhs,expr_t&&rhs){ return lhs/=rhs; }
+expr_t operator%=(expr_t&lhs,expr_t&&rhs){ return lhs%=rhs; }
 
 expr_t operator+=(expr_t&lhs,expr_t&rhs){
   bool p=std::holds_alternative<bint>(lhs);

@@ -27,20 +27,21 @@ std::pair<AST::Nitem*,AST::Nitem*> get_right_args(tokenize&tok){ // {上付き�
   auto get_arg=[&tok](AST::Nitem*&arg,bool is_below)->void {
     tok.next_token();
     if(tok.top().token=="{"){
-      if(is_below&&is_below_declare) arg=PARSER::define_var(tok,nullptr);
+      if(is_below&&is_below_declare)
+        arg=PARSER::define_var(tok,nullptr);
       else{
         tok.next_token();
         arg=expr(tok);
-        if(tok.top().token!="}") tok.error_throw(__func__+std::string(" : {}が閉じられていません"));
-        tok.next_token();
       }
+      if(tok.top().token!="}") tok.error_throw(__func__+std::string(" : {}が閉じられていません"));
+      tok.next_token();
     }else{
       if(is_below&&is_below_declare) tok.error_throw(__func__+std::string(" : 下付きの引数が宣言されていません"));
       arg=atom(tok);
     }
   };
-  while(exp==nullptr&&below==nullptr){
-    if(tok.top().token=="^"||tok.top().token=="**") get_arg(exp,false);
+  while(exp==nullptr||below==nullptr){
+    if(tok.top().token=="^") get_arg(exp,false);
     else if(tok.top().token=="_") get_arg(below,true);
     else break;
   }

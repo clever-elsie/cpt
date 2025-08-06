@@ -1,28 +1,32 @@
-CXX = g++-14
-CXXFLAGS = -g -std=gnu++26 -I. -Isrc/ast -Isrc/ast/reserved -Isrc/input -Isrc/parser -Isrc/tokenizer -Isrc/type
+# CMakeベースのMakefile
+BUILD_DIR = build
 
-SRCS := $(shell find src -name '*.cpp')
-OBJS := $(SRCS:.cpp=.o)
-TARGET = cpt
+.PHONY: all clean test install debug build debug-build release-build
 
-all: $(TARGET)
+all: build
 
-$(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
+build:
+	cmake -S . -B $(BUILD_DIR)
+	cmake --build $(BUILD_DIR)
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+debug: build
+	gdb ./$(BUILD_DIR)/cpt
 
 clean:
-	rm -f $(OBJS) $(TARGET)
-	if [ -d build ]; then rm -rf build; fi
+	if [ -d $(BUILD_DIR) ]; then rm -rf $(BUILD_DIR); fi
 
-test: $(TARGET)
+test: build
 	./scripts/test-runner.sh
 
 install: build
-	cmake --install build
+	cmake --install $(BUILD_DIR)
 
-build:
-	cmake -S . -B build
-	cmake --build build
+# デバッグビルド用
+debug-build:
+	cmake -S . -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=Debug
+	cmake --build $(BUILD_DIR)
+
+# リリースビルド用
+release-build:
+	cmake -S . -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(BUILD_DIR)
