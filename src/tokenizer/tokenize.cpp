@@ -1,22 +1,32 @@
 #include "tokenize.hpp"
-#include "expr/expr.hpp"
-namespace CALC{
 
 tokenize::tokenize(std::string_view istr)noexcept:istr(istr),row(1),col(1){
   first=get_token();
 }
-
-void tokenize::error_exit(const std::string_view&msg)noexcept{
-  std::cerr<<row<<":"<<col<<":"<<std::string(msg)<<std::endl;
+std::string tokenize::gen_error_msg(const std::string_view&msg)const{
+  std::string ret=std::string(msg)+" : "+std::to_string(row)+":"+std::to_string(col)+"\n";
   auto itr=istr.begin();
   for(;itr!=istr.end();++itr)
     if(*itr=='\n'||*itr=='\r') break;
-  std::string_view line_view(istr.begin()-col+1,itr);
-  std::cerr<<std::string(line_view)<<std::endl;
+  std::string_view line_view(itr-col+1,itr);
+  ret+=std::string(line_view)+"\n";
   for(size_t i=0;i<col-1;++i)
-    std::cerr<<" ";
-  std::cerr<<"^"<<std::endl;
+    ret+=" ";
+  ret+="^\n";
+  return ret;
+}
+
+void tokenize::error_exit(const std::string_view&msg)noexcept{
+  std::cerr<<gen_error_msg(msg)<<std::endl;
   std::exit(EXIT_FAILURE);
+}
+
+void tokenize::error_throw(const std::string&msg)noexcept(false){
+  throw std::runtime_error(gen_error_msg(msg));
+}
+
+std::pair<size_t,size_t> tokenize::get_pos()const noexcept{
+  return {row,col};
 }
 
 pToken tokenize::next_token()noexcept{
@@ -159,7 +169,8 @@ pToken tokenize::get_token()noexcept{
       if(istr.size()>1&&istr[0]==istr[1]) cnt=2; break;
     case '+': case ',': case '-': break;
     case '/': if(istr.size()>1&&istr[1]=='/') cnt=2; break;
-    case ':': case ';': break;
+    case ':': if(istr.size()>1&&istr[1]=='=') cnt=2; break;
+    case ';': break;
     case '<': case '=': case '>':
       if(istr.size()>1&&istr[1]=='=') cnt=2; break;
     case '?': case '^': case '_': case '{': break;
@@ -173,4 +184,3 @@ pToken tokenize::get_token()noexcept{
   istr=istr.substr(cnt,istr.size());
   return {token_t::SYMBOL,ret};
 }
-}//namespace CALC

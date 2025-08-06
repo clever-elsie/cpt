@@ -1,8 +1,25 @@
 #pragma once
-#include "type.hpp"
 #include <cstdlib>
+#include <string>
+#include <string_view>
+#include <cctype>
+#include <iostream>
 
-namespace CALC{
+enum class except{
+  EMPTY,
+  INVALID_TOKEN,
+};
+
+enum class token_t{
+  DECIMAL, HEX, BINARY, FLOAT,
+  RESERVED, IDENT, SYMBOL, EMPTY
+};
+
+struct pToken{
+  token_t type;
+  std::string_view token;
+};
+
 class tokenize{
   pToken first;
   std::string_view istr;
@@ -18,9 +35,11 @@ class tokenize{
   pToken next_token()noexcept;
   pToken top()noexcept;
   void error_exit(const std::string_view&msg)noexcept;
+  void error_throw(const std::string&msg)noexcept(false);
+  std::pair<size_t,size_t> get_pos()const noexcept;
   private:
+  std::string gen_error_msg(const std::string_view&msg)const;
   pToken get_token()noexcept;
   pToken get_number()noexcept;
   pToken get_ident()noexcept;
 };
-}// namespace

@@ -18,10 +18,10 @@ std::string get_all_source_input(int argc, char**argv){
     return get_source_from_stream(std::cin);
   //ファイルが存在するならそれを入力とする
   if(argc==3){
-    if(argv[1]=="-f"){
+    if(argv[1]==std::string_view("-f")){
       if(std::ifstream ifile(argv[2]);ifile)
         return get_source_from_stream(ifile);
-    }else if(argv[2]=="-f")
+    }else if(argv[2]==std::string_view("-f"))
       if(std::ifstream ifile(argv[1]);ifile)
         return get_source_from_stream(ifile);
   }
