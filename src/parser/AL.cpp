@@ -45,7 +45,7 @@ AST::Nitem* and_expr(tokenize&tok) {
 AST::Nitem* compare(tokenize&tok) {
   std::vector<AST::Nitem*> items;
   std::vector<std::string_view> ops;
-  AST::Nitem* lhs=algebra(tok);
+  items.push_back(algebra(tok));
   while(true){
     if(tok.top().token=="<"||tok.top().token==">"||tok.top().token=="<="||tok.top().token==">="
     ||tok.top().token=="="||tok.top().token=="=="||tok.top().token=="!=")

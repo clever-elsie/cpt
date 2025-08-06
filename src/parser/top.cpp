@@ -21,6 +21,8 @@ AST::Nstat* top(std::string_view istr){
 
 void second(tokenize&tok,bool is_fn,AST::Nstat*parent){
   while(true){
+    while(tok.top().token==";"||tok.top().token==",")
+      tok.next_token();
     try{
       if(tok.top().token=="let") parent->items.push_back(define_var(tok,parent));
       else if(tok.top().token=="def"){
@@ -31,8 +33,6 @@ void second(tokenize&tok,bool is_fn,AST::Nstat*parent){
       if(e==except::EMPTY) break;
       else throw e;
     }
-    while(tok.top().token==";"||tok.top().token==",")
-      tok.next_token();
     if(tok.top().token=="}") break;
   }
 }
