@@ -20,7 +20,6 @@ expr_t Ndecl::get_value(){
   // 初期値を評価．変数テーブルに登録
   expr_t value=init->get_value();
   if(is_local_first){
-    belong_to->var_names.push_back(name);
     auto itr=var_map.find(name);
     if(itr==var_map.end())
       itr=var_map.emplace(name,std::vector<expr_t>()).first;

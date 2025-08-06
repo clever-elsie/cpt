@@ -1,5 +1,5 @@
 CXX = g++-14
-CXXFLAGS = -g -std=gnu++26 -I. -Isrc/calc -Isrc/calc/expr -Isrc/calc/expr/node -Isrc/calc/expr/node/reserved
+CXXFLAGS = -g -std=gnu++26 -I. -Isrc/ast -Isrc/ast/reserved -Isrc/input -Isrc/parser -Isrc/tokenizer -Isrc/type
 
 SRCS := $(shell find src -name '*.cpp')
 OBJS := $(SRCS:.cpp=.o)
@@ -14,4 +14,15 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TARGET) 
+	rm -f $(OBJS) $(TARGET)
+	if [ -d build ]; then rm -rf build; fi
+
+test: $(TARGET)
+	./scripts/test-runner.sh
+
+install: build
+	cmake --install build
+
+build:
+	cmake -S . -B build
+	cmake --build build

@@ -10,10 +10,12 @@ find_package(Boost REQUIRED)
 include_directories(
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/calc
-    ${CMAKE_SOURCE_DIR}/src/calc/expr
-    ${CMAKE_SOURCE_DIR}/src/calc/expr/node
-    ${CMAKE_SOURCE_DIR}/src/calc/expr/node/reserved
+    ${CMAKE_SOURCE_DIR}/src/ast
+    ${CMAKE_SOURCE_DIR}/src/ast/reserved
+    ${CMAKE_SOURCE_DIR}/src/input
+    ${CMAKE_SOURCE_DIR}/src/parser
+    ${CMAKE_SOURCE_DIR}/src/tokenizer
+    ${CMAKE_SOURCE_DIR}/src/type
 )
 
 # 全てのcppファイルを集める
