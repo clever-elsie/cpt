@@ -1,14 +1,15 @@
 #include "../node.hpp"
 
-namespace CALC{namespace EXPR{
+namespace EXPR{
 
-expr_t parse_DECIMAL(tokenize&tok){
+AST::Nitem* parse_DECIMAL(tokenize&tok){
   pToken tmp=tok.top();
   tok.next_token();
-  return expr_t(bint(tmp.token));
+  auto [row,col]=tok.get_pos();
+  return new AST::Nliteral(row,col,bint(tmp.token));
 }
 
-expr_t parse_BINARY(tokenize&tok){
+AST::Nitem* parse_BINARY(tokenize&tok){
   // 0b{0,1}+ -> HEX
   std::string_view token=tok.top().token;
   size_t rem=(token.size()-2)&0b11;
@@ -28,19 +29,22 @@ expr_t parse_BINARY(tokenize&tok){
     hex.push_back(p<=9?'0'+p:'A'+p-10);
   }
   tok.next_token();
-  return expr_t(bint(hex));
+  auto [row,col]=tok.get_pos();
+  return new AST::Nliteral(row,col,bint(hex));
 }
 
-expr_t parse_HEX(tokenize&tok){
+AST::Nitem* parse_HEX(tokenize&tok){
   std::string_view number=tok.top().token;
   tok.next_token();
-  return bint(number);
+  auto [row,col]=tok.get_pos();
+  return new AST::Nliteral(row,col,bint(number));
 }
 
-expr_t parse_FLOAT(tokenize&tok){
+AST::Nitem* parse_FLOAT(tokenize&tok){
   pToken tmp=tok.top();
   tok.next_token();
-  return expr_t(bfloat(tmp.token));
+  auto [row,col]=tok.get_pos();
+  return new AST::Nliteral(row,col,bfloat(tmp.token));
 }
 
-} } //namespace EXPR}CALC}
+} //namespace EXPR

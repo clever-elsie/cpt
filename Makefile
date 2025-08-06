@@ -1,13 +1,13 @@
 CXX = g++-14
-CXXFLAGS = -std=gnu++26 -I. -Isrc/calc -Isrc/calc/expr -Isrc/calc/expr/node -Isrc/calc/expr/node/reserved
+CXXFLAGS = -g -std=gnu++26 -I. -Isrc/calc -Isrc/calc/expr -Isrc/calc/expr/node -Isrc/calc/expr/node/reserved
 
-SRCS := $(shell find . -name '*.cpp')
+SRCS := $(shell find src -name '*.cpp')
 OBJS := $(SRCS:.cpp=.o)
 TARGET = cpt
 
 all: $(TARGET)
 
-$(TARGET): $(SRCS) $(OBJS)
+$(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
 
 %.o: %.cpp

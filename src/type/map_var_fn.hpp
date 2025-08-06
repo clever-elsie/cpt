@@ -5,12 +5,12 @@
 #include <unordered_map>
 #include <vector>
 
-namespace CALC{ namespace AST{
+namespace AST{
 struct Nstat;
 struct Nitem;
-} } //namespace AST} namespace CALC}
+}
 
-namespace CALC_MAP{
+namespace MAP_VAR_FN{
 
 using namespace std;
 using sv=string_view;
@@ -28,21 +28,19 @@ struct StringEqual{
   bool operator()(sv lhs,str rhs)const noexcept{return lhs==rhs;}
   bool operator()(str lhs,str rhs)const noexcept{return lhs==rhs;}
 };
-}// namespace CALC_MAP
+}// namespace MAP_VAR_FN
 
-namespace CALC{
 template<class expr_t>
 using VAR_MAP=std::unordered_map<
   std::string,
   std::vector<expr_t>,
-  CALC_MAP::StringHash,
-  CALC_MAP::StringEqual
+  MAP_VAR_FN::StringHash,
+  MAP_VAR_FN::StringEqual
 >;
 
 using FN_MAP=std::unordered_map<
   std::string,
-  CALC::AST::Nstat*,
-  CALC_MAP::StringHash,
-  CALC_MAP::StringEqual
+  AST::Nstat*,
+  MAP_VAR_FN::StringHash,
+  MAP_VAR_FN::StringEqual
 >;
-}

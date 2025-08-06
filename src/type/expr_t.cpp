@@ -1,7 +1,6 @@
-#include "type.hpp"
+#include "expr_t.hpp"
 #include <cstdint>
 
-namespace CALC{
 
 expr_t operator+=(expr_t&lhs,expr_t&&rhs){ return lhs+=rhs; }
 expr_t operator-=(expr_t&lhs,expr_t&&rhs){ return lhs+=rhs; }
@@ -161,4 +160,3 @@ bool operator&&(const expr_t&lhs,const expr_t&rhs){
 bool operator||(const expr_t&lhs,const expr_t&rhs){
   return to_bool(lhs)||to_bool(rhs);
 }
-}//namespace CALC
