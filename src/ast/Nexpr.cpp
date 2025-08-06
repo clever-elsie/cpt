@@ -145,8 +145,8 @@ inline expr_t Nexpr::eval_bop_assign(Nitem*lhs,Nitem*rhs){
 }
 
 expr_t Nexpr::eval_top(){
-  assert(lhs&&rhs&&ths);
   if(op==op_t::BR){
+    assert(lhs&&rhs&&ths);
     if(to_bool(lhs->get_value())) return rhs->get_value();
     return ths->get_value();
   }

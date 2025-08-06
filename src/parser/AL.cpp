@@ -51,6 +51,7 @@ AST::Nitem* compare(tokenize&tok) {
     ||tok.top().token=="="||tok.top().token=="=="||tok.top().token=="!=")
       ops.push_back(tok.top().token);
     else break;
+    tok.next_token();
     items.push_back(algebra(tok));
   }
   if(items.size()==1) return items.front();
@@ -65,7 +66,7 @@ AST::Nitem* compare(tokenize&tok) {
     throw std::runtime_error("無効な演算子");
   };
   AST::Nitem* front=nullptr;
-  for(ssize_t i=ops.size()-2;i>=0;--i){
+  for(ssize_t i=items.size()-2;i>=0;--i){
     auto [row,col]=items[i]->get_pos();
     front=new AST::Nexpr(row,col,get_op(ops[i]),i==0?items[i]:nullptr,items[i+1],front);
   }
