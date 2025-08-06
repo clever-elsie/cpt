@@ -1,15 +1,11 @@
 #include "top.hpp"
-#include "expr/expr.hpp"
+#include "expr.hpp"
 #include <string>
 #include <cstddef>
 #include <cctype>
 #include <set>
 
 namespace PARSER{
-
-void define_fn(tokenize&tok);
-AST::Ndecl* define_var(tokenize&tok,AST::Nstat*parent);
-void second(tokenize&tok,bool is_fn,AST::Nstat*parent);
 
 AST::Nstat* top(std::string_view istr){
   tokenize tok(istr);
@@ -42,10 +38,8 @@ void second(tokenize&tok,bool is_fn,AST::Nstat*parent){
 }
 
 enum class ident_error{
-  OK,
-  EMPTY,
-  RESERVED,
-  FN,
+  OK, EMPTY,
+  RESERVED, FN,
 };
 
 ident_error check_ident(std::string_view ident){

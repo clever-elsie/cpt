@@ -89,7 +89,7 @@ class Nvar:public Nitem{
 class Nliteral:public Nitem{
   expr_t value;
   public:
-  Nliteral(size_t row,size_t col,expr_t value);
+  Nliteral(size_t row,size_t col,expr_t&&value);
   virtual expr_t get_value()override;
   ~Nliteral()=default;
 };

@@ -1,6 +1,5 @@
-#include "../node.hpp"
-#include "../expr.hpp"
-#include "../../top.hpp"
+#include "expr.hpp"
+#include "top.hpp"
 #include <array>
 #include <algorithm>
 #include <ranges>
@@ -84,6 +83,39 @@ AST::Nitem* reserved_function_call(tokenize&tok){
   }else return function_call(tok); // 普通の関数
 }
 
+template<size_t base>
+AST::Nitem* parse_literal(tokenize&tok){
+  if constexpr(base==2){
+    // 0b{0,1}+ -> HEX
+    std::string_view token=tok.top().token;
+    auto [row,col]=tok.get_pos();
+    tok.next_token();
+    size_t rem=(token.size()-2)&0b11;
+    size_t len=(rem>0)+((token.size()-2)>>2);
+    size_t idx=2;
+    std::string hex("0x");
+    hex.reserve(len);
+    if(char p=0;rem){
+      if(rem==3&&token[idx++]=='1') p+=4;
+      if(rem>=2&&token[idx++]=='1') p+=2;
+      if(token[idx++]=='1') p++;
+      hex.push_back(p<=9?'0'+p:'A'+p-10);
+    }
+    for(;idx<token.size();idx+=4){
+      char p=(token[idx]-'0'<<3)+(token[idx+1]-'0'<<2)+(token[idx+2]-'0'<<1)+token[idx+3]-'0';
+      hex.push_back(p<=9?'0'+p:'A'+p-10);
+    }
+    return new AST::Nliteral(row,col,bint(hex));
+  }else{
+    pToken tmp=tok.top();
+    tok.next_token();
+    auto [row,col]=tok.get_pos();
+    if constexpr(base==0) // float
+      return new AST::Nliteral(row,col,bfloat(tmp.token));
+    else if constexpr(base==10||base==16)
+      return new AST::Nliteral(row,col,bint(tmp.token));
+  }
+}
 
 AST::Nitem* atom(tokenize&tok) {
   if(token_t::EMPTY==tok.top().type)
@@ -99,27 +131,23 @@ AST::Nitem* atom(tokenize&tok) {
     tok.next_token(); // 変数名を消費
     return ret;
   }else if(token_t::RESERVED==tok.top().type) return reserved_function_call(tok);
-  else if(tok.top().token=="!"){ // 論理否定
-    tok.next_token(); // !を消費
+  else if(tok.top().token=="!"||tok.top().token=="-"){
     auto [row,col]=tok.get_pos();
-    return new AST::Nexpr(row,col,AST::op_t::NOT,atom(tok),nullptr);
-  }else if(tok.top().token=="-"){
-    tok.next_token(); // -を消費
-    auto [row,col]=tok.get_pos();
-    return new AST::Nexpr(row,col,AST::op_t::NEG,atom(tok),nullptr);
+    tok.next_token(); // !か-を消費
+    return new AST::Nexpr(row,col,tok.top().token=="-"?AST::op_t::NEG:AST::op_t::NOT,atom(tok),nullptr);
   }else if(tok.top().token=="("){
     tok.next_token();
     AST::Nitem* ret=expr(tok);
     if(tok.top().token!=")") tok.error_throw(__func__+std::string(" : かっこが閉じられてないよ"));
     tok.next_token();
     return ret;
-  }else if(token_t::DECIMAL==tok.top().type) return parse_DECIMAL(tok);
-  else if(token_t::FLOAT==tok.top().type) return parse_FLOAT(tok);
-  else if(token_t::BINARY==tok.top().type) return parse_BINARY(tok);
-  else if(token_t::HEX==tok.top().type) return parse_HEX(tok);
+  }else if(token_t::DECIMAL==tok.top().type) return parse_literal<10>(tok);
+  else if(token_t::FLOAT==tok.top().type) return parse_literal<0>(tok);
+  else if(token_t::BINARY==tok.top().type) return parse_literal<2>(tok);
+  else if(token_t::HEX==tok.top().type) return parse_literal<16>(tok);
   else if(token_t::SYMBOL==tok.top().type)
     tok.error_throw(__func__+std::string(" : ")+std::string(tok.top().token)+"は無効な記号です");
   return nullptr;
 }
 
-} // namespace EXPR
+} //namespace EXPR
