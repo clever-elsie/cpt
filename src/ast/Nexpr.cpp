@@ -55,61 +55,35 @@ expr_t Nexpr::eval_uop(){
   assert(lhs);
   expr_t value=lhs->get_value();
   switch(op){
-    case op_t::NOT: eval_uop_not(value); break;
-    case op_t::NEG: eval_uop_neg(value); break;
+    case op_t::NOT: value=!value; break;
+    case op_t::NEG: value=-value; break;
     case op_t::FACT: eval_uop_fact(value); break;
   }
   return value;
 }
 
-inline void Nexpr::eval_uop_not(expr_t&value){
-  if(std::holds_alternative<bint>(value))
-    value=std::get<bint>(value)!=0;
-  else if(std::holds_alternative<bfloat>(value))
-    value=std::get<bfloat>(value)!=0;
-  if(std::holds_alternative<bool>(value))
-    value=!std::get<bool>(value);
-  else {
-    auto [row, col] = this->get_pos();
-    throw std::runtime_error("無効な論理否定 at [row=" + std::to_string(row) + ", col=" + std::to_string(col) + "]");
-  }
-}
-
-inline void Nexpr::eval_uop_neg(expr_t&value){
-  if(std::holds_alternative<bool>(value))
-    value=bint(-(int)std::get<bool>(value));
-  else if(std::holds_alternative<bint>(value))
-    value=-std::get<bint>(value);
-  else if(std::holds_alternative<bfloat>(value))
-    value=-std::get<bfloat>(value);
-  else {
-    auto [row, col] = this->get_pos();
-    throw std::runtime_error("無効な符号反転 at [row=" + std::to_string(row) + ", col=" + std::to_string(col) + "]");
-  }
-}
-
 inline void Nexpr::eval_uop_fact(expr_t&value){
-  if(!std::holds_alternative<bint>(value)) {
+  if(!value.is<expr_t::types::BINT>()) {
     auto [row, col] = this->get_pos();
     throw std::runtime_error("階乗は整数値でなければなりません at [row=" + std::to_string(row) + ", col=" + std::to_string(col) + "]");
   }
-  if(std::get<bint>(value)<0) {
+  if(value.get<bint>()<0) {
     auto [row, col] = this->get_pos();
     throw std::runtime_error("階乗は負の整数に対し定義されていません at [row=" + std::to_string(row) + ", col=" + std::to_string(col) + "]");
   }
-  if(std::get<bint>(value)==0) value=bint(1);
-  for(bint n=std::get<bint>(value);--n>=2;) std::get<bint>(value)*=n;
+  if(value.get<bint>()==0) value=bint(1);
+  for(bint n=value.get<bint>();--n>=2;) value.get<bint>()*=n;
 }
 
 expr_t Nexpr::eval_bop(){
   assert(lhs&&rhs);
   switch(op){ // 短絡評価
     case op_t::LOR:{
-      if(to_bool(lhs->get_value())) return true;
+      if((bool)(lhs->get_value())) return true;
       return rhs->get_value();
     }break;
     case op_t::LAND:{
-      if(!to_bool(lhs->get_value())) return false;
+      if(!(lhs->get_value())) return false;
       return rhs->get_value();
     }break;
     case op_t::ASSIGN: return eval_bop_assign(lhs,rhs); break;
@@ -117,38 +91,17 @@ expr_t Nexpr::eval_bop(){
   }
   expr_t lhs_value=lhs->get_value();
   expr_t rhs_value=rhs->get_value();
+  expr_t ret;
   switch(op){
-    case op_t::ADD: lhs_value+=rhs_value; break;
-    case op_t::SUB: lhs_value-=rhs_value; break;
-    case op_t::MUL: lhs_value*=rhs_value; break;
-    case op_t::POW: lhs_value=pow(lhs_value,rhs_value); break;
-    case op_t::FDIV: lhs_value/=rhs_value; break;
-    case op_t::IDIV: eval_bop_idiv(lhs_value,rhs_value); break;
-    case op_t::MOD: lhs_value%=rhs_value; break;
+    case op_t::ADD: ret=lhs_value+rhs_value; break;
+    case op_t::SUB: ret=lhs_value-rhs_value; break;
+    case op_t::MUL: ret=lhs_value*rhs_value; break;
+    case op_t::POW: ret=lhs_value.pow(rhs_value); break;
+    case op_t::FDIV: ret=lhs_value/rhs_value; break;
+    case op_t::IDIV: ret=idiv(lhs_value,rhs_value); break;
+    case op_t::MOD: ret=lhs_value%rhs_value; break;
   }
-  return lhs_value;
-}
-
-void Nexpr::eval_bop_idiv(expr_t&lhs,expr_t&rhs){
-  bool Z=false;
-  if(std::holds_alternative<bool>(lhs))
-    lhs=bint((int)std::get<bool>(lhs));
-  if(std::holds_alternative<bool>(rhs))
-    rhs=bint((int)std::get<bool>(rhs));
-  if(std::holds_alternative<bint>(rhs)){
-    if(std::get<bint>(rhs)==0) Z=true;
-  }else if(std::get<bfloat>(rhs)==0) Z=true;
-  if(Z) throw std::runtime_error("ゼロ除算はできません");
-  bool L=std::holds_alternative<bint>(lhs);
-  bool R=std::holds_alternative<bint>(rhs);
-  if(L&&R){ // 両方整数の時はmp::divide_qrが使える
-    bint q,r;
-    divide_qr(std::get<bint>(lhs),std::get<bint>(rhs),q,r);
-    lhs=std::move(q);
-  }else{
-    if(L) lhs=(bfloat)std::get<bint>(lhs)/std::get<bfloat>(rhs);
-    else lhs/=R?(bfloat)std::get<bint>(rhs):std::get<bfloat>(rhs);
-  }
+  return ret;
 }
 
 inline expr_t Nexpr::eval_bop_assign(Nitem*lhs,Nitem*rhs){
@@ -165,7 +118,7 @@ inline expr_t Nexpr::eval_bop_assign(Nitem*lhs,Nitem*rhs){
 expr_t Nexpr::eval_top(){
   if(op==op_t::BR){
     assert(lhs&&rhs&&ths);
-    if(to_bool(lhs->get_value())) return rhs->get_value();
+    if((bool)(lhs->get_value())) return rhs->get_value();
     return ths->get_value();
   }
   // 比較

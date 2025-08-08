@@ -1,162 +1,255 @@
 #include "expr_t.hpp"
-#include <cstdint>
 
+expr_t::types expr_t::common_type(const expr_t&lhs,const expr_t&rhs){
+  types lt=lhs.type(),rt=rhs.type();
+  if(lt==rt) return lt;
+  if(lt==types::VECTOR||rt==types::VECTOR) throw std::runtime_error("expr_t[]と他のexpr_tの型は比較不能");
+  if(lt==types::BFLOAT||rt==types::BFLOAT) return types::BFLOAT;
+  if(lt==types::BINT||rt==types::BINT) return types::BINT;
+  if(lt==types::BOOL||rt==types::BOOL) return types::BOOL;
+  throw std::runtime_error("無効な型比較");
+}
 
-expr_t operator+=(expr_t&lhs,expr_t&&rhs){ return lhs+=rhs; }
-expr_t operator-=(expr_t&lhs,expr_t&&rhs){ return lhs-=rhs; }
-expr_t operator*=(expr_t&lhs,expr_t&&rhs){ return lhs*=rhs; }
-expr_t operator/=(expr_t&lhs,expr_t&&rhs){ return lhs/=rhs; }
-expr_t operator%=(expr_t&lhs,expr_t&&rhs){ return lhs%=rhs; }
-
-expr_t operator+=(expr_t&lhs,expr_t&rhs){
-  bool p=std::holds_alternative<bint>(lhs);
-  if(p==std::holds_alternative<bint>(rhs))
-    if(p) std::get<bint>(lhs)+=std::get<bint>(rhs);
-    else std::get<bfloat>(lhs)+=std::get<bfloat>(rhs);
-  else{
-    if(p) swap(lhs,rhs);
-    std::get<bfloat>(lhs)+=static_cast<bfloat>(std::get<bint>(rhs));
+expr_t::operator bool()const{
+  switch(type()){
+    case types::BINT: return std::get<bint>(value)!=0;
+    case types::BFLOAT: return std::get<bfloat>(value)!=0;
+    case types::BOOL: return std::get<bool>(value);
+    case types::VECTOR: throw std::runtime_error("無効な型変換expr_t[]->bool");
   }
-  return lhs;
+  return false;
 }
 
-expr_t operator-=(expr_t&lhs,expr_t&rhs){
-  bool p=std::holds_alternative<bint>(lhs);
-  if(p==std::holds_alternative<bint>(rhs))
-    if(p) std::get<bint>(lhs)-=std::get<bint>(rhs);
-    else std::get<bfloat>(lhs)-=std::get<bfloat>(rhs);
-  else
-    if(p) lhs=static_cast<bfloat>(get<bint>(lhs))-get<bfloat>(rhs);
-    else get<bfloat>(lhs)-=static_cast<bfloat>(get<bint>(rhs));
-  return lhs;
-}
-
-expr_t operator*=(expr_t&lhs,expr_t&rhs){
-  bool p=std::holds_alternative<bint>(lhs);
-  if(p==std::holds_alternative<bint>(rhs))
-    if(p) std::get<bint>(lhs)*=std::get<bint>(rhs);
-    else std::get<bfloat>(lhs)*=std::get<bfloat>(rhs);
-  else{
-    if(p) std::swap(lhs,rhs);
-    std::get<bfloat>(lhs)*=static_cast<bfloat>(std::get<bint>(rhs));
+expr_t::operator bint()const{
+  switch(type()){
+    case types::BINT: return std::get<bint>(value);
+    case types::BFLOAT: return static_cast<bint>(std::get<bfloat>(value));
+    case types::BOOL: return std::get<bool>(value);
+    case types::VECTOR: throw std::runtime_error("無効な型変換expr_t[]->bint");
   }
-  return lhs;
+  return 0;
 }
 
-expr_t operator/=(expr_t&lhs,expr_t&rhs){
-  bool zerodiv=false;
-  if(std::holds_alternative<bint>(rhs))
-    zerodiv=get<bint>(rhs)==0;
-  else zerodiv=get<bfloat>(rhs)==0;
-  if(zerodiv) throw std::runtime_error("ゼロ除算は禁止");
-  bool p=std::holds_alternative<bint>(lhs);
-  if(p==std::holds_alternative<bint>(rhs))
-    if(p){
-      bint q,r;
-      divide_qr(get<bint>(lhs),get<bint>(rhs),q,r); // ADL
-      if(r==0) get<bint>(lhs)=q;
-      else lhs=expr_t(static_cast<bfloat>(get<bint>(lhs))/static_cast<bfloat>(get<bint>(rhs)));
-    }else std::get<bfloat>(lhs)/=std::get<bfloat>(rhs);
-  else{
-    if(p) lhs=expr_t(static_cast<bfloat>(get<bint>(lhs))/get<bfloat>(rhs));
-    else get<bfloat>(lhs)/=static_cast<bfloat>(get<bint>(rhs));
+expr_t::operator bfloat()const{
+  switch(type()){
+    case types::BINT: return static_cast<bfloat>(std::get<bint>(value));
+    case types::BFLOAT: return std::get<bfloat>(value);
+    case types::BOOL: return std::get<bool>(value);
+    case types::VECTOR: throw std::runtime_error("無効な型変換expr_t[]->bfloat");
   }
-  return lhs;
+  return 0;
 }
 
-expr_t operator%=(expr_t&lhs,expr_t&rhs){
-  if(std::holds_alternative<bint>(lhs)&&std::holds_alternative<bint>(rhs)){
-    if(std::get<bint>(rhs)==0)
-      throw std::runtime_error("ゼロ除算は禁止");
-    std::get<bint>(lhs)%=std::get<bint>(rhs);
-  }else throw std::runtime_error("整数以外の型では剰余演算はできません");
-  return lhs;
+expr_t::types expr_t::type()const{
+  return static_cast<types>(value.index());
 }
 
-/**
- * @brief 正の整数の指数のべき乗を計算する
- */
+size_t expr_t::size()const{
+  if(type()==types::VECTOR) return get<std::vector<expr_t>>().size();
+  return 1;
+}
+
+namespace EXPR_T_INTERNAL{
+/** @brief 正の整数の指数のべき乗を計算する */
 expr_t pow(bint&lhs, bint&rhs){
   bint ret=1;
   do{
     uint64_t r=rhs.convert_to<uint64_t>();
     rhs>>=64;
-    if(rhs>0) // 続きあり
-      for(char i=0;i<64;++i,r>>=1){
+    if(rhs>0){// 続きあり
+      for(char i=0;i<64;++i,r>>=1,lhs*=lhs)
         if(r&1) ret*=lhs;
-        lhs*=lhs;
-      }
-    else{ // このループで終了
-      for(;r;r>>=1){
+    }else{ // このループで終了
+      for(;r;r>>=1,lhs*=lhs)
         if(r&1) ret*=lhs;
-        lhs*=lhs;
-      }
       break;
     }
   }while(1);
   return ret;
 }
+} // namespace EXPR_T_INTERNAL
 
-expr_t pow(expr_t&lhs, expr_t&rhs){
-  bool l=holds_alternative<bint>(lhs);
-  bool r=holds_alternative<bint>(rhs);
-  if(l&&r&&std::get<bint>(rhs)>0)
-    return pow(get<bint>(lhs),get<bint>(rhs));
-  return mp::pow(l?(bfloat)get<bint>(lhs):get<bfloat>(lhs),r?(bfloat)get<bint>(rhs):get<bfloat>(rhs));
-}
-
-template<class Pred1,class Pred2,class Pred3>
-bool compare(const expr_t&lhs,const expr_t&rhs){
-  constexpr static Pred1 pred1{};
-  constexpr static Pred2 pred2{};
-  constexpr static Pred3 pred3{};
-  bool l=std::holds_alternative<bfloat>(lhs);
-  bool r=std::holds_alternative<bfloat>(rhs);
-  if(l||r){ // bfloat
-    if(l&&r) return pred1(std::get<bfloat>(lhs),std::get<bfloat>(rhs)); // bfloat==bfloat
-    auto&a=l?std::get<bfloat>(lhs):std::get<bfloat>(rhs); // bfloatの方
-    auto&b=l? // bintかboolの方をbintで参照
-      std::holds_alternative<bint>(rhs)?
-        std::get<bint>(rhs)
-       :(int)std::get<bool>(rhs)
-     :std::holds_alternative<bint>(lhs)?
-        std::get<bint>(lhs)
-       :(int)std::get<bool>(lhs);
-    return pred1(a,static_cast<bfloat>(b));
-  }
-  l=std::holds_alternative<bint>(lhs);
-  r=std::holds_alternative<bint>(rhs);
-  if(l||r){ // bint
-    if(l&&r) return pred2(std::get<bint>(lhs),std::get<bint>(rhs)); // bint==bint
-    if(l) return pred2(std::get<bint>(lhs),(int)std::get<bool>(rhs)); // bint==bool
-    return pred2((int)std::get<bool>(lhs),std::get<bint>(rhs)); // bool==bint
-  }
-  return pred3(std::get<bool>(lhs),std::get<bool>(rhs)); // bool==bool
-}
-
-bool operator==(const expr_t&lhs,const expr_t&rhs){
-  return compare<std::equal_to<bfloat>,std::equal_to<bint>,std::equal_to<bool>>(lhs,rhs);
-}
-
-bool operator<(const expr_t&lhs,const expr_t&rhs){
-  return compare<std::less<bfloat>,std::less<bint>,std::less<bool>>(lhs,rhs);
-}
-
-bool to_bool(const expr_t&value){
-  if(std::holds_alternative<bint>(value))
-    return std::get<bint>(value)!=0;
-  else if(std::holds_alternative<bfloat>(value))
-    return std::get<bfloat>(value)!=0;
-  else if(std::holds_alternative<bool>(value))
-    return std::get<bool>(value);
-  throw std::runtime_error("無効な型");
-  return false;
+expr_t expr_t::pow(const expr_t&rhs){
+  if(is<types::BINT>()&&rhs.is<types::BINT>())
+    if(bint r=rhs.get<bint>();r>=0)
+      return EXPR_T_INTERNAL::pow(get<bint>(),r);
+  return mp::pow((bfloat)*this,(bfloat)rhs);
 }
 
 bool operator&&(const expr_t&lhs,const expr_t&rhs){
-  return to_bool(lhs)&&to_bool(rhs);
+  return (bool)lhs&&(bool)rhs;
 }
 
 bool operator||(const expr_t&lhs,const expr_t&rhs){
-  return to_bool(lhs)||to_bool(rhs);
+  return (bool)lhs||(bool)rhs;
+}
+
+bool operator==(const expr_t&lhs,const expr_t&rhs){
+  switch(expr_t::common_type(lhs,rhs)){
+    case expr_t::types::BINT:
+      return (bint)lhs==(bint)rhs;
+    case expr_t::types::BFLOAT:
+      return (bfloat)lhs==(bfloat)rhs;
+    case expr_t::types::BOOL:
+      return (bool)lhs==(bool)rhs;
+    case expr_t::types::VECTOR:
+      const size_t lsz=lhs.size(),rsz=rhs.size();
+      if(lsz!=rsz) return false;
+      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
+      for(size_t i=0;i<lsz;++i)
+        if(lv[i]!=rv[i]) return false;
+      return true;
+  }
+  return false; // コンパイルエラー抑制
+}
+
+bool operator!=(const expr_t&lhs,const expr_t&rhs){
+  return !(lhs==rhs);
+}
+
+bool operator<(const expr_t&lhs,const expr_t&rhs){
+  switch(expr_t::common_type(lhs,rhs)){
+    case expr_t::types::BINT: return (bint)lhs<(bint)rhs;
+    case expr_t::types::BFLOAT: return (bfloat)lhs<(bfloat)rhs;
+    case expr_t::types::BOOL: return (bool)lhs<(bool)rhs;
+    case expr_t::types::VECTOR:
+      const size_t lsz=lhs.size(),rsz=rhs.size();
+      const size_t minsz=std::min(lsz,rsz);
+      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
+      for(size_t i=0;i<minsz;++i)
+        if(lv[i]<rv[i]) return true;
+        else if(lv[i]>rv[i]) return false;
+      return lsz<rsz;
+  }
+  return false;
+}
+
+bool operator<=(const expr_t&lhs,const expr_t&rhs){
+  return !(lhs>rhs);
+}
+
+bool operator>(const expr_t&lhs,const expr_t&rhs){
+  return rhs<lhs;
+}
+
+bool operator>=(const expr_t&lhs,const expr_t&rhs){
+  return !(lhs<rhs);
+}
+
+bool expr_t::operator!()const{ return !(bool)*this; }
+
+expr_t expr_t::operator-()const{
+  switch(type()){
+    case types::BINT: return -(bint)*this;
+    case types::BFLOAT: return -(bfloat)*this;
+    case types::BOOL: return bint(-(int)(bool)*this);
+    case types::VECTOR:
+      const size_t lsz=size();
+      std::vector<expr_t> ret(lsz);
+      const auto&v=get<std::vector<expr_t>>();
+      for(size_t i=0;i<lsz;++i) ret[i]=-v[i];
+      return ret;
+  }
+  return expr_t();
+}
+
+expr_t operator+(const expr_t&lhs,const expr_t&rhs){
+  switch(expr_t::common_type(lhs,rhs)){
+    case expr_t::types::BINT: return (bint)lhs+(bint)rhs;
+    case expr_t::types::BFLOAT: return (bfloat)lhs+(bfloat)rhs;
+    case expr_t::types::BOOL: return bint((int)(bool)lhs+(int)(bool)rhs);
+    case expr_t::types::VECTOR:
+      const size_t lsz=lhs.size();
+      if(lsz!=rhs.size()) throw std::runtime_error("expr_t[]のサイズが異なります");
+      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
+      std::vector<expr_t> ret(lsz);
+      for(size_t i=0;i<lsz;++i) ret[i]=lv[i]+rv[i];
+      return ret;
+  }
+  return expr_t();
+}
+
+expr_t operator-(const expr_t&lhs,const expr_t&rhs){
+  switch(expr_t::common_type(lhs,rhs)){
+    case expr_t::types::BINT: return (bint)lhs-(bint)rhs;
+    case expr_t::types::BFLOAT: return (bfloat)lhs-(bfloat)rhs;
+    case expr_t::types::BOOL: return bint((int)(bool)lhs-(int)(bool)rhs);
+    case expr_t::types::VECTOR:
+      const size_t lsz=lhs.size();
+      if(lsz!=rhs.size()) throw std::runtime_error("expr_t[]のサイズが異なります");
+      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
+      std::vector<expr_t> ret(lsz);
+      for(size_t i=0;i<lsz;++i) ret[i]=lv[i]-rv[i];
+      return ret;
+  }
+  return expr_t();
+}
+
+expr_t operator*(const expr_t&lhs,const expr_t&rhs){
+  switch(expr_t::common_type(lhs,rhs)){
+    case expr_t::types::BINT: return (bint)lhs*(bint)rhs;
+    case expr_t::types::BFLOAT: return (bfloat)lhs*(bfloat)rhs;
+    case expr_t::types::BOOL: return (bool)lhs&&(bool)rhs; // (int)にキャストしなくてもbool &&とint *は同型
+    case expr_t::types::VECTOR:
+      const size_t lsz=lhs.size();
+      if(lsz!=rhs.size()) throw std::runtime_error("expr_t[]のサイズが異なります");
+      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
+      std::vector<expr_t> ret(lsz);
+      for(size_t i=0;i<lsz;++i) ret[i]=lv[i]*rv[i];
+      return ret;
+  }
+  return expr_t();
+}
+
+expr_t operator/(const expr_t&lhs,const expr_t&rhs){
+  switch(expr_t::common_type(lhs,rhs)){
+    case expr_t::types::BINT:{
+      bint q,r;
+      mp::divide_qr((bint)lhs,(bint)rhs,q,r);
+      if(r==0) return q;
+      return (bfloat)q+(bfloat)r/(bfloat)rhs;
+    }
+    case expr_t::types::BFLOAT: return (bfloat)lhs/(bfloat)rhs;
+    case expr_t::types::BOOL: return bint((int)(bool)lhs/(int)(bool)rhs);
+    case expr_t::types::VECTOR:
+      const size_t lsz=lhs.size();
+      if(lsz!=rhs.size()) throw std::runtime_error("expr_t[]のサイズが異なります");
+      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
+      std::vector<expr_t> ret(lsz);
+      for(size_t i=0;i<lsz;++i) ret[i]=lv[i]/rv[i];
+      return ret;
+  }
+  return expr_t();
+}
+
+expr_t operator%(const expr_t&lhs,const expr_t&rhs){
+  switch(expr_t::common_type(lhs,rhs)){
+    case expr_t::types::BINT: return (bint)lhs%(bint)rhs;
+    case expr_t::types::BFLOAT: throw std::runtime_error("浮動小数点型の剰余演算は禁止");
+    case expr_t::types::BOOL: return bint((int)(bool)lhs%(int)(bool)rhs);
+    case expr_t::types::VECTOR:
+      const size_t lsz=lhs.size();
+      if(lsz!=rhs.size()) throw std::runtime_error("expr_t[]のサイズが異なります");
+      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
+      std::vector<expr_t> ret(lsz);
+      for(size_t i=0;i<lsz;++i) ret[i]=lv[i]%rv[i];
+      return ret;
+  }
+  return expr_t();
+}
+
+expr_t idiv(const expr_t&lhs,const expr_t&rhs){
+  switch(expr_t::common_type(lhs,rhs)){
+    case expr_t::types::BINT: return (bint)lhs/(bint)rhs;
+    case expr_t::types::BFLOAT: return mp::trunc((bfloat)lhs/(bfloat)rhs);
+    case expr_t::types::BOOL: return bint((int)(bool)lhs/(int)(bool)rhs);
+    case expr_t::types::VECTOR:
+      const size_t lsz=lhs.size();
+      if(lsz!=rhs.size()) throw std::runtime_error("expr_t[]のサイズが異なります");
+      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
+      std::vector<expr_t> ret(lsz);
+      for(size_t i=0;i<lsz;++i) ret[i]=lv[i]/rv[i];
+      return ret;
+  }
+  return expr_t();
 }

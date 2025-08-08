@@ -52,12 +52,9 @@ class Nexpr:public Nitem{
   ~Nexpr();
   private:
   expr_t eval_uop();
-  void eval_uop_not(expr_t&value);
-  void eval_uop_neg(expr_t&value);
   void eval_uop_fact(expr_t&value);
 
   expr_t eval_bop();
-  void eval_bop_idiv(expr_t&lhs,expr_t&rhs);
   expr_t eval_bop_assign(Nitem*lhs,Nitem*rhs);
 
   expr_t eval_top(); // top=ternary operator

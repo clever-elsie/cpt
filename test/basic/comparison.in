@@ -1,10 +1,28 @@
-let lt = 1<2;
-let le = 1<=2;
-let gt = 3>2;
-let ge = 3>=2;
+let lt1 = 1<2;
+let le1 = 1<=2;
+let gt1 = 3>2;
+let ge1 = 3>=2;
 let eq1 = 2=2;
 let eq2 = 2==2;
-let ne = 2!=3;
-let chain = 1<2<3;
+let ne1 = 2!=3;
+let chain1 = 1<2<3;
 
-\print(lt, le, gt, ge, eq1, eq2, ne, chain); 
+let lt2 = 2<1;
+let le2 = 2<=1;
+let gt2 = 2>3;
+let ge2 = 2>=3;
+let eq3 = 1=2;
+let eq4 = 1==2;
+let ne2 = 3!=3;
+let chain2 = 1<2<0;
+
+\print(
+  lt1, lt2,
+  le1, le2,
+  gt1, gt2,
+  ge1, ge2,
+  eq1, eq2,
+  eq3, eq4,
+  ne1, ne2,
+  chain1, chain2
+);
