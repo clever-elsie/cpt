@@ -77,8 +77,8 @@ inline void Nexpr::eval_uop_not(expr_t&value){
 
 inline void Nexpr::eval_uop_neg(expr_t&value){
   if(std::holds_alternative<bool>(value))
-    value=bint((int)std::get<bool>(value));
-  if(std::holds_alternative<bint>(value))
+    value=bint(-(int)std::get<bool>(value));
+  else if(std::holds_alternative<bint>(value))
     value=-std::get<bint>(value);
   else if(std::holds_alternative<bfloat>(value))
     value=-std::get<bfloat>(value);

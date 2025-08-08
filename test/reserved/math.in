@@ -1,0 +1,20 @@
+\print(
+  \log(10),
+  \log_{2}(3),
+  \log10(10),
+  \abs(-2),
+  \abs(-4.0),
+  \cos(1),
+  \sin(1),
+  \tan(1),
+  \acos(1),
+  \asin(1),
+  \atan(1),
+  \cosh(1),
+  \sinh(1),
+  \tanh(1),
+  \ceil(1.5),
+  \floor(1.5),
+  \round(1.5),
+  \trunc(1.5)
+)

@@ -11,4 +11,6 @@ let fdiv = 7/2;
 let idiv = 7//2;
 let mod = 7%4;
 
-\print(integer, binary, hex, float, boolean, add, sub, mul, fdiv, idiv, mod); 
+let neg = -2;
+
+\print(integer, binary, hex, float, boolean, add, sub, mul, fdiv, idiv, mod, neg);

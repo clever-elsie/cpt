@@ -130,10 +130,14 @@ AST::Nitem* atom(tokenize&tok) {
     tok.next_token(); // 変数名を消費
     return ret;
   }else if(token_t::RESERVED==tok.top().type) return reserved_function_call(tok);
-  else if(tok.top().token=="!"||tok.top().token=="-"){
+  else if(tok.top().token=="!"){
     auto [row,col]=tok.get_pos();
-    tok.next_token(); // !か-を消費
-    return new AST::Nexpr(row,col,tok.top().token=="-"?AST::op_t::NEG:AST::op_t::NOT,atom(tok),nullptr);
+    tok.next_token(); // !を消費
+    return new AST::Nexpr(row,col,AST::op_t::NOT,atom(tok),nullptr);
+  }else if(tok.top().token=="-"){
+    auto [row,col]=tok.get_pos();
+    tok.next_token(); // -を消費
+    return new AST::Nexpr(row,col,AST::op_t::NEG,atom(tok),nullptr);
   }else if(tok.top().token=="("){
     tok.next_token();
     AST::Nitem* ret=expr(tok);

@@ -23,21 +23,22 @@ expr_t Nfn::get_value(){
   return ret;
 }
 
-constexpr std::array<std::pair<std::string_view,expr_t(*)(std::vector<Nitem*>&)>,15>
+constexpr std::array<std::pair<std::string_view,expr_t(*)(std::vector<Nitem*>&)>,19>
 construct_reserved_fnlist(){
   using fn_t=expr_t(*)(std::vector<Nitem*>&);
   using fn_p_t=std::pair<std::string_view,fn_t>;
   #define def(name) fn_p_t{#name, name}
-  std::array<fn_p_t,15> list{
+  std::array<fn_p_t,19> list{
     def(log),def(sum),def(prod),def(abs),def(log10),
     def(cos),def(sin),def(tan),def(acos),def(asin),
     def(atan),def(cosh),def(sinh),def(tanh),def(print),
+    def(ceil),def(floor),def(round),def(trunc),
   };
   #undef def
   std::sort(list.begin(),list.end());
   return list;
 }
-#include <iostream>
+
 expr_t Nfn::eval_reserved_fn(){
   std::string_view id(name.begin()+1,name.end());
   auto fnlist=construct_reserved_fnlist();
@@ -47,7 +48,7 @@ expr_t Nfn::eval_reserved_fn(){
     return it->second(args);
   }catch(const std::runtime_error&e){
     this->error_exit(e.what());
-    throw; // この行は実際には実行されませんが、コンパイラの警告を抑制します
+    throw; // エラー対策
   }
 }
 } // namespace AST

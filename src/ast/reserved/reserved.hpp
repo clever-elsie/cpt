@@ -18,4 +18,8 @@ expr_t cosh(std::vector<Nitem*>&args);
 expr_t sinh(std::vector<Nitem*>&args);
 expr_t tanh(std::vector<Nitem*>&args);
 expr_t print(std::vector<Nitem*>&args);
+expr_t ceil(std::vector<Nitem*>&args);
+expr_t floor(std::vector<Nitem*>&args);
+expr_t round(std::vector<Nitem*>&args);
+expr_t trunc(std::vector<Nitem*>&args);
 }// namespace EXPR

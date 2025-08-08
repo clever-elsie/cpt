@@ -49,6 +49,10 @@ defp(atan)
 defp(cosh)
 defp(sinh)
 defp(tanh)
+defp(ceil)
+defp(floor)
+defp(round)
+defp(trunc)
 #undef defp
 
 }//namespace AST
