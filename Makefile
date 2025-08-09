@@ -1,15 +1,15 @@
 # CMakeベースのMakefile
 BUILD_DIR = build
+PREFIX ?= /usr/local
+INSTALL_PREFIX_FILE = $(BUILD_DIR)/.installed_prefix
 
-.PHONY: all clean test install debug build debug-build release-build
+.PHONY: all clean test install uninstall update debug build debug-build release-build
 
-all: build
+all: release-build
 
-build:
-	cmake -S . -B $(BUILD_DIR)
-	cmake --build $(BUILD_DIR)
+build: release-build
 
-debug: build
+debug: debug-build
 	gdb ./$(BUILD_DIR)/cpt
 
 clean:
@@ -18,8 +18,16 @@ clean:
 test: build
 	./scripts/test-runner.sh
 
-install: build
-	cmake --install $(BUILD_DIR)
+install: release-build
+	cmake --install $(BUILD_DIR) --prefix $(PREFIX)
+	@mkdir -p $(BUILD_DIR)
+	@echo "$(PREFIX)" > $(INSTALL_PREFIX_FILE)
+
+uninstall:
+	BUILD_DIR=$(BUILD_DIR) PREFIX=$(PREFIX) bash ./scripts/make-uninstall.sh
+
+update:
+	BUILD_DIR=$(BUILD_DIR) PREFIX=$(PREFIX) bash ./scripts/make-update.sh
 
 # デバッグビルド用
 debug-build:

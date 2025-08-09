@@ -1,4 +1,4 @@
-[![Build Status](https://img.shields.io/github/actions/workflow/status/clever-elsie/cpt/cmake.yml?branch=main)](https://github.com/clever-elsie/cpt/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/clever-elsie/cpt/ci.yml?branch=main)](https://github.com/clever-elsie/cpt/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Issues](https://img.shields.io/github/issues/clever-elsie/cpt)](https://github.com/clever-elsie/cpt/issues)
 [![Pull Requests](https://img.shields.io/github/issues-pr/clever-elsie/cpt)](https://github.com/clever-elsie/cpt/pulls)
