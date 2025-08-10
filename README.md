@@ -33,10 +33,8 @@ make install  # /usr/local/bin にインストールされます
 
 ### アップデート
 ```sh
-sudo make update
+make update
 ```
-`git`が`sudo`で使えるならこの方法でリモートの更新を自動で反映する．  
-もしインストール場所が`sudo`無しで書き込みできるなら`make update`でいい．
 
 ### アンインストール
 ```sh

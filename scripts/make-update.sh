@@ -29,7 +29,7 @@ fi
 echo "Updating main..."
 if [[ "$current_branch" == "main" ]]; then
   git pull --ff-only origin main
-  make install PREFIX="$prefix"
+  sudo make install PREFIX="$prefix"
 else
   if [[ -z "$local_main" ]]; then
     git checkout -q -B main origin/main
@@ -37,7 +37,7 @@ else
     git checkout -q main
     git pull --ff-only origin main
   fi
-  make install PREFIX="$prefix"
+  sudo make install PREFIX="$prefix"
   git checkout -q "$current_branch"
 fi
 
