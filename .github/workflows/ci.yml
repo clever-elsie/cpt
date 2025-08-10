@@ -17,13 +17,8 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y g++-14 cmake libboost-all-dev
+        sudo apt-get install -y g++-14 cmake libboost-all-dev build-essential
         
     - name: Build and test with CMake
       run: |
-        mkdir -p build
-        cmake -S . -B build -DCMAKE_CXX_STANDARD=23
-        cmake --build build
-        chmod +x scripts/test-runner.sh
-        cd build
-        ../scripts/test-runner.sh 
+        make test
