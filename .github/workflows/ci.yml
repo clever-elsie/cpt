@@ -13,12 +13,27 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
-    - name: Install dependencies
+
+    - name: Install APT dependencies (cached)
+      uses: awalsh128/cache-apt-pkgs-action@v1
+      with:
+        packages: g++-14 cmake libboost-all-dev build-essential ccache
+        version: 1.0
+
+    - name: Cache ccache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ccache
+        key: ccache-${{ runner.os }}-gcc14-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: |
+          ccache-${{ runner.os }}-gcc14-
+          ccache-${{ runner.os }}-
+
+    - name: Build (CMake + ccache)
       run: |
-        sudo apt-get update
-        sudo apt-get install -y g++-14 cmake libboost-all-dev build-essential
-        
-    - name: Build and test with CMake
+        cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        cmake --build build -j2
+
+    - name: Test
       run: |
-        make test
+        ./scripts/test-runner.sh

@@ -1,0 +1,8 @@
+# APT packages used by CI
+# Update this list to refresh cache key
+
+g++-14
+cmake
+libboost-all-dev
+build-essential
+ccache
