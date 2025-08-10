@@ -15,8 +15,25 @@ enum class token_t{
   RESERVED, IDENT, SYMBOL, EMPTY
 };
 
+enum class symbol_t{
+  NAS, // not a symbol
+  PLUS, MINUS, MUL, POW, // + - * **
+  FDIV, IDIV, MOD, // / // %
+  LAND, LOR, // && &, || |
+  EXCL, QUEST, // ! ?
+  ASSIGN, EQ, EEQ, // := = ==
+  NE, LT, LE, GT, GE, // != < <= > >=
+  LPAREN, RPAREN, // ()
+  LSQUARE, RSQUARE, // []
+  LCURLY, RCURLY, // {}
+  COMMA, DOT, SEMICOLON, COLON, // , . ; :
+  UNDERSCORE, // _
+  CARET, // ^
+};
+
 struct pToken{
   token_t type;
+  symbol_t symbol;
   std::string_view token;
 };
 

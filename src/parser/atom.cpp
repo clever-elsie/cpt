@@ -8,15 +8,15 @@ namespace EXPR{
 
 std::vector<AST::Nitem*> get_args(tokenize&tok){
   std::vector<AST::Nitem*> args;
-  if(tok.top().token!="(") tok.error_throw(__func__+std::string(" : 関数呼び出しの引数が(で囲まれていません"));
+  if(tok.top().symbol!=symbol_t::LPAREN) tok.error_throw(__func__+std::string(" : 関数呼び出しの引数が(で囲まれていません"));
   tok.next_token(); // (を消費
   while(true){
     args.push_back(expr(tok));
-    if(tok.top().token==",") tok.next_token();
-    else if(tok.top().token==")") break;
+    if(tok.top().symbol==symbol_t::COMMA) tok.next_token();
+    else if(tok.top().symbol==symbol_t::RPAREN) break;
     else tok.error_throw(__func__+std::string(" : 関数呼び出しの引数が,で区切られていません"));
   }
-  if(tok.top().token!=")") tok.error_throw(__func__+std::string(" : 関数呼び出しの引数が)で囲まれていません"));
+  if(tok.top().symbol!=symbol_t::RPAREN) tok.error_throw(__func__+std::string(" : 関数呼び出しの引数が)で囲まれていません"));
   tok.next_token();
   return args;
 }
@@ -26,14 +26,14 @@ std::pair<AST::Nitem*,AST::Nitem*> get_right_args(tokenize&tok){ // {上付き�
   AST::Nitem* exp=nullptr, *below=nullptr;
   auto get_arg=[&tok](AST::Nitem*&arg,bool is_below)->void {
     tok.next_token();
-    if(tok.top().token=="{"){
+    if(tok.top().symbol==symbol_t::LCURLY){
       if(is_below&&is_below_declare)
         arg=PARSER::define_var(tok,nullptr);
       else{
         tok.next_token();
         arg=expr(tok);
       }
-      if(tok.top().token!="}") tok.error_throw(__func__+std::string(" : {}が閉じられていません"));
+      if(tok.top().symbol!=symbol_t::RCURLY) tok.error_throw(__func__+std::string(" : {}が閉じられていません"));
       tok.next_token();
     }else{
       if(is_below&&is_below_declare) tok.error_throw(__func__+std::string(" : 下付きの引数が宣言されていません"));
@@ -41,8 +41,8 @@ std::pair<AST::Nitem*,AST::Nitem*> get_right_args(tokenize&tok){ // {上付き�
     }
   };
   while(exp==nullptr||below==nullptr){
-    if(tok.top().token=="^") get_arg(exp,false);
-    else if(tok.top().token=="_") get_arg(below,true);
+    if(tok.top().symbol==symbol_t::CARET) get_arg(exp,false);
+    else if(tok.top().symbol==symbol_t::UNDERSCORE) get_arg(below,true);
     else break;
   }
   return{exp,below};
@@ -130,18 +130,18 @@ AST::Nitem* atom(tokenize&tok) {
     tok.next_token(); // 変数名を消費
     return ret;
   }else if(token_t::RESERVED==tok.top().type) return reserved_function_call(tok);
-  else if(tok.top().token=="!"){
+  else if(tok.top().symbol==symbol_t::EXCL){
     auto [row,col]=tok.get_pos();
     tok.next_token(); // !を消費
     return new AST::Nexpr(row,col,AST::op_t::NOT,atom(tok),nullptr);
-  }else if(tok.top().token=="-"){
+  }else if(tok.top().symbol==symbol_t::MINUS){
     auto [row,col]=tok.get_pos();
     tok.next_token(); // -を消費
     return new AST::Nexpr(row,col,AST::op_t::NEG,atom(tok),nullptr);
-  }else if(tok.top().token=="("){
+  }else if(tok.top().symbol==symbol_t::LPAREN){
     tok.next_token();
     AST::Nitem* ret=expr(tok);
-    if(tok.top().token!=")") tok.error_throw(__func__+std::string(" : かっこが閉じられてないよ"));
+    if(tok.top().symbol!=symbol_t::RPAREN) tok.error_throw(__func__+std::string(" : かっこが閉じられてないよ"));
     tok.next_token();
     return ret;
   }else if(token_t::DECIMAL==tok.top().type) return parse_literal<10>(tok);

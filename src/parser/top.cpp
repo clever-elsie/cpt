@@ -20,9 +20,13 @@ AST::Nstat* top(std::string_view istr){
 }
 
 void second(tokenize&tok,bool is_fn,AST::Nstat*parent){
-  while(true){
-    while(tok.top().token==";"||tok.top().token==",")
+  auto skip_sep=[](tokenize&tok){
+    while(tok.top().symbol==symbol_t::SEMICOLON
+        ||tok.top().symbol==symbol_t::COMMA)
       tok.next_token();
+  };
+  while(true){
+    skip_sep(tok);
     try{
       if(tok.top().token=="let") parent->items.push_back(define_var(tok,parent));
       else if(tok.top().token=="def"){
@@ -33,9 +37,8 @@ void second(tokenize&tok,bool is_fn,AST::Nstat*parent){
       if(e==except::EMPTY) break;
       else throw e;
     }
-    while(tok.top().token==";"||tok.top().token==",")
-      tok.next_token();
-    if(tok.top().token=="}") break;
+    skip_sep(tok);
+    if(tok.top().symbol==symbol_t::RCURLY) break;
   }
 }
 
@@ -74,7 +77,7 @@ AST::Ndecl* define_var(tokenize&tok,AST::Nstat*parent){
   if(auto err=check_ident(variable);err!=ident_error::OK)
     tok.error_exit(__func__+std::string(" : ")+error_ident(err,false));
   tok.next_token();
-  if(tok.top().type!=token_t::SYMBOL||(tok.top().token!="="&&tok.top().token!=":="))
+  if(tok.top().type!=token_t::SYMBOL||(tok.top().symbol!=symbol_t::ASSIGN&&tok.top().symbol!=symbol_t::EQ))
     tok.error_exit(__func__+std::string(" : 宣言文では=か:=で代入してください．"));
   tok.next_token();
   AST::Nitem* expr=EXPR::expr(tok); // 例外は上へ
@@ -98,7 +101,7 @@ void define_fn(tokenize&tok){
   std::vector<std::string> args;
   AST::Nstat*body=new AST::Nstat();
   tok.next_token();
-  if(tok.top().type!=token_t::SYMBOL||tok.top().token!="(")
+  if(tok.top().symbol!=symbol_t::LPAREN)
     tok.error_exit(__func__+std::string(" : 関数の引数は()で囲んでください"));
   tok.next_token();
   while(tok.top().type==token_t::IDENT){ // 引数
@@ -111,10 +114,10 @@ void define_fn(tokenize&tok){
     if(tok.top().type==token_t::SYMBOL&&tok.top().token==",") tok.next_token();
     else break;
   }
-  if(tok.top().type!=token_t::SYMBOL||tok.top().token!=")")
+  if(tok.top().symbol!=symbol_t::RPAREN)
     tok.error_exit(__func__+std::string(" : 関数の引数は()で囲んでください"));
   tok.next_token();
-  if(tok.top().type!=token_t::SYMBOL||tok.top().token!="{")
+  if(tok.top().symbol!=symbol_t::LCURLY)
     tok.error_exit(__func__+std::string(" : 関数の定義は{}で囲んでください"));
   tok.next_token(); // {を消費
   // 先に関数名だけ登録
@@ -122,7 +125,7 @@ void define_fn(tokenize&tok){
   if(!success)
     tok.error_exit(__func__+std::string(" : 関数")+std::string(fn_name)+"が重複しています");
   second(tok,true,body);
-  if(tok.top().token!="}") tok.error_exit(__func__+std::string(" : 関数")+std::string(fn_name)+"の定義が閉じられていません");
+  if(tok.top().symbol!=symbol_t::RCURLY) tok.error_exit(__func__+std::string(" : 関数")+std::string(fn_name)+"の定義が閉じられていません");
   tok.next_token(); // }を消費
   body->args=std::move(args);
   body->args_set=std::move(Sargs);

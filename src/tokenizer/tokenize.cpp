@@ -116,26 +116,37 @@ ENDofLITERAL:
   istr=std::string_view(itr,istr.end());
   switch(state){
     case Zero:
-    case Digit:return{token_t::DECIMAL,ret}; break;
-    case Hex: return{token_t::HEX, ret}; break;
-    case Bin: return{token_t::BINARY,ret}; break;
-    case Float: return{token_t::FLOAT, ret}; break;
-    case Exp: return{token_t::FLOAT, ret}; break;
+    case Digit:return{token_t::DECIMAL,symbol_t::NAS,ret}; break;
+    case Hex: return{token_t::HEX, symbol_t::NAS, ret}; break;
+    case Bin: return{token_t::BINARY, symbol_t::NAS,ret}; break;
+    case Float: return{token_t::FLOAT, symbol_t::NAS, ret}; break;
+    case Exp: return{token_t::FLOAT, symbol_t::NAS, ret}; break;
     default:
       error_exit(__func__+std::string(" : 数値の解析に失敗しました"));
   }
-  return{token_t::DECIMAL,ret};
+  return{token_t::DECIMAL, symbol_t::NAS, ret};
 }
 
 pToken tokenize::get_ident()noexcept{
-  const token_t is_reserverd = istr[0]=='\\'?token_t::RESERVED:token_t::IDENT;
+  const token_t is_reserved = istr[0]=='\\'?token_t::RESERVED:token_t::IDENT;
   size_t i=1;
   for(;i<istr.size();++i)
     if(!std::isalnum(istr[i]))
       break;
   std::string_view ret(istr.begin(),i);
   istr=std::string_view(istr.begin()+i,istr.end());
-  return{is_reserverd,ret};
+  if(is_reserved==token_t::RESERVED){
+    symbol_t sym=symbol_t::NAS;
+    if(ret=="\\ge") sym=symbol_t::GE;
+    else if(ret=="\\gt") sym=symbol_t::GT;
+    else if(ret=="\\le") sym=symbol_t::LE;
+    else if(ret=="\\lt") sym=symbol_t::LT;
+    else if(ret=="\\land") sym=symbol_t::LAND;
+    else if(ret=="\\lor") sym=symbol_t::LOR;
+    else if(ret=="\\ne") sym=symbol_t::NE;
+    if(sym!=symbol_t::NAS) return{token_t::RESERVED, sym, std::string_view()};
+  }
+  return{is_reserved, symbol_t::NAS, ret};
 }
 
 pToken tokenize::get_token()noexcept{
@@ -152,37 +163,66 @@ pToken tokenize::get_token()noexcept{
       if(is_comment=(itr!=istr.end()&&*itr=='#'))
         while(itr!=istr.end()&&(*itr!='\n'&&*itr!='\r')) ++itr;
       istr=std::string_view(itr,istr.end());
-      if(itr==istr.end()) return {token_t::EMPTY,std::string_view()};
+      if(itr==istr.end()) return {token_t::EMPTY, symbol_t::NAS, std::string_view()};
     }while(is_comment);
   }
   if(std::isdigit(istr[0])) 
     return get_number();
   if(std::isalpha(istr[0])||istr[0]=='\\')
     return get_ident();
-  int cnt=1;
+  symbol_t sym=symbol_t::NAS;
+  size_t cnt=1;
   switch(istr[0]){ // caseは昇順．最適化を信じろ
     case '!':
-      if(istr.size()>1&&istr[1]=='=') cnt=2; break;
-    case '%':break;
-    case '&':
-      if(istr.size()>1&&istr[0]==istr[1]) cnt=2; break;
-    case '(': case ')': break;
+      if(istr.size()>1&&istr[1]=='=') sym=symbol_t::NE, cnt=2;
+      else sym=symbol_t::EXCL;
+      break;
+    case '%': sym=symbol_t::MOD; break;
+    case '&': sym=symbol_t::LAND;
+      if(istr.size()>1&&istr[0]==istr[1]) cnt=2;
+      break;
+    case '(': sym=symbol_t::LPAREN; break;
+    case ')': sym=symbol_t::RPAREN; break;
     case '*':
-      if(istr.size()>1&&istr[0]==istr[1]) cnt=2; break;
-    case '+': case ',': case '-': break;
-    case '/': if(istr.size()>1&&istr[1]=='/') cnt=2; break;
-    case ':': if(istr.size()>1&&istr[1]=='=') cnt=2; break;
-    case ';': break;
-    case '<': case '=': case '>':
-      if(istr.size()>1&&istr[1]=='=') cnt=2; break;
-    case '?': case '^': case '_': case '{': break;
-    case '|': if(istr.size()>1&&istr[1]=='|') cnt=2; break;
-    case '}': break;
+      if(istr.size()>1&&istr[0]==istr[1]) sym=symbol_t::POW, cnt=2;
+      else sym=symbol_t::MUL;
+      break;
+    case '+': sym=symbol_t::PLUS; break;
+    case ',': sym=symbol_t::COMMA; break;
+    case '-': sym=symbol_t::MINUS; break;
+    case '/':
+      if(istr.size()>1&&istr[1]=='/') sym=symbol_t::IDIV, cnt=2;
+      else sym=symbol_t::FDIV;
+      break;
+    case ':':
+      if(istr.size()>1&&istr[1]=='=') sym=symbol_t::ASSIGN, cnt=2;
+      else sym=symbol_t::COLON;
+      break;
+    case ';': sym=symbol_t::SEMICOLON; break;
+    case '<':
+      if(istr.size()>1&&istr[1]=='=') sym=symbol_t::LE, cnt=2;
+      else sym=symbol_t::LT;
+      break;
+    case '=':
+      if(istr.size()>1&&istr[1]=='=') sym=symbol_t::EEQ, cnt=2;
+      else sym=symbol_t::EQ;
+      break;
+    case '>':
+      if(istr.size()>1&&istr[1]=='=') sym=symbol_t::GE, cnt=2;
+      else sym=symbol_t::GT;
+      break;
+    case '?': sym=symbol_t::QUEST; break;
+    case '^': sym=symbol_t::CARET; break;
+    case '_': sym=symbol_t::UNDERSCORE; break;
+    case '{': sym=symbol_t::LCURLY; break;
+    case '|': sym=symbol_t::LOR;
+      if(istr.size()>1&&istr[1]=='|') cnt=2;
+      break;
+    case '}': sym=symbol_t::RCURLY; break;
     default:
       error_exit(__func__+std::string(" : ")+istr[0]+"は無効な記号です");
       break;
   }
-  std::string_view ret=istr.substr(0,cnt);
   istr=istr.substr(cnt,istr.size());
-  return {token_t::SYMBOL,ret};
+  return {token_t::SYMBOL,sym,std::string_view()};
 }
