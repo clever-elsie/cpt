@@ -111,7 +111,7 @@ void define_fn(tokenize&tok){
       tok.error_exit(__func__+std::string(" : 関数")+std::string(fn_name)+"の引数名が重複しています");
     args.emplace_back(tok.top().token);
     tok.next_token();
-    if(tok.top().type==token_t::SYMBOL&&tok.top().token==",") tok.next_token();
+    if(tok.top().symbol==symbol_t::COMMA) tok.next_token();
     else break;
   }
   if(tok.top().symbol!=symbol_t::RPAREN)

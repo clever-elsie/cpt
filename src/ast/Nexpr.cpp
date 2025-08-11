@@ -35,7 +35,9 @@ Nexpr::Nexpr(size_t row, size_t col, op_t op,
 }
 
 Nexpr::~Nexpr(){
-  delete lhs,rhs,ths;
+  delete lhs;
+  delete rhs;
+  delete ths;
 }
 
 expr_t Nexpr::get_value(){
