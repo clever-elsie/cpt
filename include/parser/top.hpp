@@ -1,7 +1,7 @@
 #pragma once
 #include <string_view>
-#include "../ast/ast.hpp"
-#include "../tokenizer/tokenize.hpp"
+#include "ast/ast.hpp"
+#include "tokenizer/tokenize.hpp"
 
 namespace PARSER{
 AST::Nstat* top(std::string_view istr);

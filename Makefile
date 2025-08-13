@@ -32,9 +32,9 @@ update:
 # デバッグビルド用
 debug-build:
 	cmake -S . -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=Debug
-	cmake --build $(BUILD_DIR)
+	cmake --build $(BUILD_DIR) -j$(nproc)
 
 # リリースビルド用
 release-build:
 	cmake -S . -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=Release
-	cmake --build $(BUILD_DIR)
+	cmake --build $(BUILD_DIR) -j$(nproc)

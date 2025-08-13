@@ -3,7 +3,7 @@
 #include <iostream>
 #include <iterator>
 #include <filesystem>
-#include "input.hpp"
+#include "input/input.hpp"
 
 namespace INPUT{
 

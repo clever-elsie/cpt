@@ -1,5 +1,5 @@
-#include "ast.hpp"
-#include "reserved/reserved.hpp"
+#include "ast/ast.hpp"
+#include "ast/reserved.hpp"
 
 namespace AST{
 

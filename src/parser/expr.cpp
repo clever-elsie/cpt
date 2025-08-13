@@ -1,5 +1,5 @@
-#include "expr.hpp"
-#include "../tokenizer/tokenize.hpp"
+#include "parser/expr.hpp"
+#include "tokenizer/tokenize.hpp"
 
 namespace EXPR{
 

@@ -1,8 +1,8 @@
 #pragma once
 #include <unordered_set>
 #include <vector>
-#include "../type/expr_t.hpp"
-#include "../type/map_var_fn.hpp"
+#include "type/expr_t.hpp"
+#include "type/map_var_fn.hpp"
 
 namespace AST{
 

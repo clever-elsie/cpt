@@ -1,6 +1,6 @@
 #pragma once
-#include "../ast.hpp"
-#include "../../tokenizer/tokenize.hpp"
+#include "ast.hpp"
+#include "tokenizer/tokenize.hpp"
 
 namespace AST{
 expr_t sum(std::vector<Nitem*>&args);

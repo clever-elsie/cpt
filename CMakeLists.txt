@@ -19,16 +19,9 @@ endif()
 # Boostの多倍長整数を使っているので、Boostを探す
 find_package(Boost REQUIRED)
 
-# サブディレクトリのヘッダも含める
 include_directories(
     ${Boost_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/ast
-    ${CMAKE_SOURCE_DIR}/src/ast/reserved
-    ${CMAKE_SOURCE_DIR}/src/input
-    ${CMAKE_SOURCE_DIR}/src/parser
-    ${CMAKE_SOURCE_DIR}/src/tokenizer
-    ${CMAKE_SOURCE_DIR}/src/type
+    ${CMAKE_SOURCE_DIR}/include
 )
 
 # 全てのcppファイルを集める
