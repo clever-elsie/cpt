@@ -34,6 +34,7 @@ enum class symbol_t{
 struct pToken{
   token_t type;
   symbol_t symbol;
+  size_t len;
   std::string_view token;
 };
 

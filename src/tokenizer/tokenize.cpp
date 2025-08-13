@@ -10,7 +10,8 @@ std::string tokenize::gen_error_msg(const std::string_view&msg)const{
     if(*itr=='\n'||*itr=='\r') break;
   std::string_view line_view(itr-col+1,itr);
   ret+=std::string(line_view)+"\n";
-  for(size_t i=0;i<col-1;++i)
+  const size_t endofline=col-1-first.len;
+  for(size_t i=0;i<endofline;++i)
     ret+=" ";
   ret+="^\n";
   return ret;
@@ -116,15 +117,16 @@ ENDofLITERAL:
   istr=std::string_view(itr,istr.end());
   switch(state){
     case Zero:
-    case Digit:return{token_t::DECIMAL,symbol_t::NAS,ret}; break;
-    case Hex: return{token_t::HEX, symbol_t::NAS, ret}; break;
-    case Bin: return{token_t::BINARY, symbol_t::NAS,ret}; break;
-    case Float: return{token_t::FLOAT, symbol_t::NAS, ret}; break;
-    case Exp: return{token_t::FLOAT, symbol_t::NAS, ret}; break;
+    case Digit:return{token_t::DECIMAL,symbol_t::NAS,ret.size(),ret}; break;
+    case Hex: return{token_t::HEX, symbol_t::NAS, ret.size(),ret}; break;
+    case Bin: return{token_t::BINARY, symbol_t::NAS,ret.size(),ret}; break;
+    case Float: return{token_t::FLOAT, symbol_t::NAS, ret.size(),ret}; break;
+    case Exp: return{token_t::FLOAT, symbol_t::NAS, ret.size(),ret}; break;
     default:
       error_exit(__func__+std::string(" : 数値の解析に失敗しました"));
   }
-  return{token_t::DECIMAL, symbol_t::NAS, ret};
+  col+=ret.size();
+  return{token_t::DECIMAL, symbol_t::NAS, ret.size(), ret};
 }
 
 pToken tokenize::get_ident()noexcept{
@@ -144,9 +146,10 @@ pToken tokenize::get_ident()noexcept{
     else if(ret=="\\land") sym=symbol_t::LAND;
     else if(ret=="\\lor") sym=symbol_t::LOR;
     else if(ret=="\\ne") sym=symbol_t::NE;
-    if(sym!=symbol_t::NAS) return{token_t::RESERVED, sym, std::string_view()};
+    if(sym!=symbol_t::NAS) return{token_t::RESERVED, sym, 0, std::string_view()};
   }
-  return{is_reserved, symbol_t::NAS, ret};
+  col+=ret.size();
+  return{is_reserved, symbol_t::NAS, ret.size(), ret};
 }
 
 pToken tokenize::get_token()noexcept{
@@ -163,7 +166,7 @@ pToken tokenize::get_token()noexcept{
       if(is_comment=(itr!=istr.end()&&*itr=='#'))
         while(itr!=istr.end()&&(*itr!='\n'&&*itr!='\r')) ++itr;
       istr=std::string_view(itr,istr.end());
-      if(itr==istr.end()) return {token_t::EMPTY, symbol_t::NAS, std::string_view()};
+      if(itr==istr.end()) return {token_t::EMPTY, symbol_t::NAS, 0, std::string_view()};
     }while(is_comment);
   }
   if(std::isdigit(istr[0])) 
@@ -223,6 +226,7 @@ pToken tokenize::get_token()noexcept{
       error_exit(__func__+std::string(" : ")+istr[0]+"は無効な記号です");
       break;
   }
+  col+=cnt;
   istr=istr.substr(cnt,istr.size());
-  return {token_t::SYMBOL,sym,std::string_view()};
+  return {token_t::SYMBOL,sym, cnt, std::string_view()};
 }
