@@ -39,6 +39,7 @@ struct pToken{
 };
 
 class tokenize{
+  std::string_view::const_iterator prev_linehead;
   pToken first;
   std::string_view istr;
   size_t row,col;
@@ -60,4 +61,5 @@ class tokenize{
   pToken get_token()noexcept;
   pToken get_number()noexcept;
   pToken get_ident()noexcept;
+  bool skip_whitespace_and_comment()noexcept;
 };

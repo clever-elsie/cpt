@@ -1,8 +1,10 @@
 #include "tokenizer/tokenize.hpp"
 
 tokenize::tokenize(std::string_view istr)noexcept:istr(istr),row(1),col(1){
+  prev_linehead=istr.begin();
   first=get_token();
 }
+
 std::string tokenize::gen_error_msg(const std::string_view&msg)const{
   std::string ret=std::string(msg)+" : "+std::to_string(row)+":"+std::to_string(col)+"\n";
   auto itr=istr.begin();
@@ -152,23 +154,31 @@ pToken tokenize::get_ident()noexcept{
   return{is_reserved, symbol_t::NAS, ret.size(), ret};
 }
 
+/**
+ * @brief 空白とコメントをスキップ
+ * @return 文字列の終端のときtrue
+ */
+bool tokenize::skip_whitespace_and_comment()noexcept{
+  bool is_comment;
+  do{
+    is_comment=false;
+    auto itr=istr.begin();
+    while(itr!=istr.end()&&std::isspace(*itr)){
+      if(*itr=='\r'&&itr+1!=istr.end()&&*(itr+1)=='\n') ++itr;
+      if(*itr=='\n'||*itr=='\r') ++row,col=1;
+      ++itr,++col;
+      prev_linehead=itr;
+    }
+    if(is_comment=(itr!=istr.end()&&*itr=='#'))
+      while(itr!=istr.end()&&(*itr!='\n'&&*itr!='\r')) ++itr;
+    istr=std::string_view(itr,istr.end());
+    if(itr==istr.end()) return true;
+  }while(is_comment);
+  return false;
+}
+
 pToken tokenize::get_token()noexcept{
-  { // skip space and comment
-    bool is_comment;
-    do{
-      is_comment=false;
-      auto itr=istr.begin();
-      while(itr!=istr.end()&&std::isspace(*itr)){
-        if(*itr=='\r'&&itr+1!=istr.end()&&*(itr+1)=='\n') ++itr;
-        if(*itr=='\n'||*itr=='\r') ++row,col=1;
-        ++itr,++col;
-      }
-      if(is_comment=(itr!=istr.end()&&*itr=='#'))
-        while(itr!=istr.end()&&(*itr!='\n'&&*itr!='\r')) ++itr;
-      istr=std::string_view(itr,istr.end());
-      if(itr==istr.end()) return {token_t::EMPTY, symbol_t::NAS, 0, std::string_view()};
-    }while(is_comment);
-  }
+  if(skip_whitespace_and_comment()) return {token_t::EMPTY, symbol_t::NAS, 0, std::string_view()};
   if(std::isdigit(istr[0])) 
     return get_number();
   if(std::isalpha(istr[0])||istr[0]=='\\')
