@@ -321,7 +321,16 @@ AST::Nitem* atom(tokenize&tok) {
     AST::Nitem* ret=new AST::Nvar(row,col,tok.top().token);
     tok.next_token();
     return ret;
-  }else if(token_t::RESERVED==tok.top().type) return reserved_function_call(tok);
+  }else if(token_t::RESERVED==tok.top().type){
+    std::string_view name = tok.top().token;
+    if(name == "\\pi" || name == "\\e" || name == "\\i" || name == "\\inf" || name == "\\nan" || name == "\\eps") {
+      auto [row, col] = tok.get_pos();
+      auto ret = new AST::Nvar(row, col, name);
+      tok.next_token();
+      return ret;
+    }
+    return reserved_function_call(tok);
+  }
   else if(tok.top().symbol==symbol_t::EXCL){
     auto [row,col]=tok.get_pos();
     tok.next_token();

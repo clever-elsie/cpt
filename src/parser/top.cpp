@@ -5,10 +5,28 @@
 #include <cstddef>
 #include <cctype>
 #include <set>
+#include <boost/math/constants/constants.hpp>
+#include <limits>
 
 namespace PARSER{
 
+void init_constants() {
+  static bool initialized = false;
+  if(initialized) return;
+  initialized = true;
+
+  AST::var_map["\\pi"] = { expr_t(boost::math::constants::pi<bfloat>()) };
+  AST::var_map["\\e"] = { expr_t(boost::math::constants::e<bfloat>()) };
+  AST::var_map["\\i"] = { expr_t(bcomplex(0, 1)) };
+  AST::var_map["\\inf"] = { expr_t(std::numeric_limits<bfloat>::infinity()) };
+  AST::var_map["\\nan"] = { expr_t(std::numeric_limits<bfloat>::quiet_NaN()) };
+  AST::var_map["\\eps"] = { expr_t(std::numeric_limits<bfloat>::epsilon()) };
+  AST::var_map["true"] = { expr_t(true) };
+  AST::var_map["false"] = { expr_t(false) };
+}
+
 AST::Nstat* top(std::string_view istr){
+  init_constants();
   tokenize tok(istr);
   AST::Nstat*stat=new AST::Nstat();
   try{
