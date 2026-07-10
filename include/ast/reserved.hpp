@@ -33,4 +33,20 @@ expr_t filter(std::vector<Nitem*>&args);
 expr_t transform(std::vector<Nitem*>&args);
 expr_t enumerate(std::vector<Nitem*>&args);
 expr_t reverse(std::vector<Nitem*>&args);
-}// namespace EXPR
+expr_t min(std::vector<Nitem*>&args);
+expr_t max(std::vector<Nitem*>&args);
+expr_t argmin(std::vector<Nitem*>&args);
+expr_t argmax(std::vector<Nitem*>&args);
+expr_t sec(std::vector<Nitem*>&args);
+expr_t csc(std::vector<Nitem*>&args);
+expr_t cot(std::vector<Nitem*>&args);
+expr_t exp(std::vector<Nitem*>&args);
+expr_t ln(std::vector<Nitem*>&args);
+expr_t lg(std::vector<Nitem*>&args);
+expr_t lb(std::vector<Nitem*>&args);
+expr_t rows(std::vector<Nitem*>&args);
+expr_t cols(std::vector<Nitem*>&args);
+expr_t arcsin(std::vector<Nitem*>&args);
+expr_t arccos(std::vector<Nitem*>&args);
+expr_t arctan(std::vector<Nitem*>&args);
+}// namespace AST

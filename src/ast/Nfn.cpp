@@ -66,12 +66,12 @@ expr_t Nfn::get_value(){
   return ret;
 }
 
-constexpr std::array<std::pair<std::string_view,expr_t(*)(std::vector<Nitem*>&)>,30>
+constexpr std::array<std::pair<std::string_view,expr_t(*)(std::vector<Nitem*>&)>,46>
 construct_reserved_fnlist(){
   using fn_t=expr_t(*)(std::vector<Nitem*>&);
   using fn_p_t=std::pair<std::string_view,fn_t>;
   #define def(name) fn_p_t{#name, name}
-  std::array<fn_p_t,30> list{
+  std::array<fn_p_t,46> list{
     def(log),def(sum),def(prod),def(abs),def(log10),
     def(cos),def(sin),def(tan),def(acos),def(asin),
     def(atan),def(cosh),def(sinh),def(tanh),def(print),
@@ -79,6 +79,11 @@ construct_reserved_fnlist(){
     def(T),def(t),def(dot),def(read),def(input),
     def(take),def(drop),def(filter),def(transform),
     def(enumerate),def(reverse),
+    def(min),def(max),def(argmin),def(argmax),
+    def(sec),def(csc),def(cot),def(exp),
+    def(ln),def(lg),def(lb),
+    def(rows),def(cols),
+    def(arcsin),def(arccos),def(arctan),
   };
   #undef def
   std::sort(list.begin(),list.end());

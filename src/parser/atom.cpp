@@ -78,7 +78,7 @@ AST::Nitem* reserved_function_call(tokenize&tok){
     AST::Nitem* ret=new AST::Nfn(row,col,name,std::move(args));
     if(exp!=nullptr) return new AST::Nexpr(row,col,AST::op_t::POW,ret,exp);
     return ret;
-  }else if(name=="\\sum"||name=="\\prod"){ // 上下付き特殊
+  }else if(name=="\\sum"||name=="\\prod"||name=="\\argmin"||name=="\\argmax"){ // 上下付き特殊
     tok.next_token();
     auto [row,col]=tok.get_pos();
     auto[exp,base]=get_right_args<true>(tok);

@@ -254,4 +254,102 @@ expr_t reverse(std::vector<Nitem*>&args){
   return expr_t(elements);
 }
 
+expr_t min(std::vector<Nitem*>&args){
+  if(args.empty()) throw std::runtime_error("min関数には引数が少なくとも1つ必要です");
+  expr_t val = args[0]->get_value();
+  for(size_t i=1; i<args.size(); ++i){
+    expr_t next = args[i]->get_value();
+    if(next < val) val = next;
+  }
+  return val;
+}
+
+expr_t max(std::vector<Nitem*>&args){
+  if(args.empty()) throw std::runtime_error("max関数には引数が少なくとも1つ必要です");
+  expr_t val = args[0]->get_value();
+  for(size_t i=1; i<args.size(); ++i){
+    expr_t next = args[i]->get_value();
+    if(val < next) val = next;
+  }
+  return val;
+}
+
+expr_t sec(std::vector<Nitem*>&args){
+  return expr_t(bint(1)) / AST::cos(args);
+}
+
+expr_t csc(std::vector<Nitem*>&args){
+  return expr_t(bint(1)) / AST::sin(args);
+}
+
+expr_t cot(std::vector<Nitem*>&args){
+  return expr_t(bint(1)) / AST::tan(args);
+}
+
+expr_t exp(std::vector<Nitem*>&args){
+  if(args.size() != 1) throw std::runtime_error("expの引数が1つではありません");
+  expr_t arg = args[0]->get_value();
+  if(arg.is<expr_t::types::COMPLEX>()){
+    return expr_t(std::exp(arg.get<bcomplex>()));
+  }
+  bfloat val = arg.is<expr_t::types::BFLOAT>() ? arg.get<bfloat>() :
+               arg.is<expr_t::types::BINT>() ? (bfloat)arg.get<bint>() :
+               arg.is<expr_t::types::BOOL>() ? (bfloat)(int)arg.get<bool>() :
+               throw std::runtime_error("expの引数の型が無効です");
+  return expr_t(mp::exp(val));
+}
+
+expr_t ln(std::vector<Nitem*>&args){
+  if(args.size() != 1) throw std::runtime_error("lnの引数が1つではありません");
+  std::vector<Nitem*> args_ln{nullptr, args[0]};
+  return AST::log(args_ln);
+}
+
+expr_t lg(std::vector<Nitem*>&args){
+  return AST::log10(args);
+}
+
+expr_t lb(std::vector<Nitem*>&args){
+  if(args.size() != 1) throw std::runtime_error("lbの引数が1つではありません");
+  auto base = new Nliteral(0, 0, bint(2));
+  std::vector<Nitem*> args_lb{base, args[0]};
+  expr_t ret;
+  try {
+    ret = AST::log(args_lb);
+  } catch (...) {
+    delete base;
+    throw;
+  }
+  delete base;
+  return ret;
+}
+
+expr_t rows(std::vector<Nitem*>&args){
+  if(args.size() != 1) throw std::runtime_error("rowsの引数が1つではありません");
+  expr_t val = args[0]->get_value();
+  if(val.is<expr_t::types::MATRIX>()){
+    return expr_t(bint(val.get<std::shared_ptr<Matrix>>()->rows));
+  }
+  if(val.is<expr_t::types::VECTOR>()){
+    return expr_t(bint(val.get<std::vector<expr_t>>().size()));
+  }
+  return expr_t(bint(1));
+}
+
+expr_t cols(std::vector<Nitem*>&args){
+  if(args.size() != 1) throw std::runtime_error("colsの引数が1つではありません");
+  expr_t val = args[0]->get_value();
+  if(val.is<expr_t::types::MATRIX>()){
+    return expr_t(bint(val.get<std::shared_ptr<Matrix>>()->cols));
+  }
+  if(val.is<expr_t::types::VECTOR>()){
+    return expr_t(bint(1));
+  }
+  return expr_t(bint(1));
+}
+
+expr_t arcsin(std::vector<Nitem*>&args){ return AST::asin(args); }
+expr_t arccos(std::vector<Nitem*>&args){ return AST::acos(args); }
+expr_t arctan(std::vector<Nitem*>&args){ return AST::atan(args); }
+
 } // namespace AST

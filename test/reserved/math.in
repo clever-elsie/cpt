@@ -16,5 +16,19 @@
   \ceil(1.5),
   \floor(1.5),
   \round(1.5),
-  \trunc(1.5)
+  \trunc(1.5),
+  \min(3, 1, 4, 1, 5),
+  \max(3, 1, 4, 1, 5),
+  \sec(1),
+  \csc(1),
+  \cot(1),
+  \exp(1),
+  \ln(10),
+  \lg(10),
+  \lb(4),
+  \arcsin(1),
+  \arccos(1),
+  \arctan(1)
 )
+\print(\argmin_{i=1}^{5} i)
+\print(\argmax_{i=1}^{5} i)
