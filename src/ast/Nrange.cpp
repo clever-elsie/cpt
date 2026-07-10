@@ -22,4 +22,15 @@ expr_t Nrange::get_value() {
   return expr_t(r);
 }
 
+json::value Nrange::to_json() const {
+  json::value v;
+  v["type"] = "range";
+  v["start"] = start_expr ? start_expr->to_json() : json::value();
+  v["end"] = end_expr ? end_expr->to_json() : json::value();
+  v["inclusive"] = is_inclusive;
+  v["row"] = (int64_t)row;
+  v["col"] = (int64_t)col;
+  return v;
+}
+
 } // namespace AST

@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_set>
 #include <vector>
+#include <json_v2.hpp>
 #include "type/expr_t.hpp"
 #include "type/map_var_fn.hpp"
 
@@ -29,10 +30,11 @@ struct Nitem{
   void error_exit(std::string_view msg);
   std::pair<size_t,size_t> get_pos()const;
   virtual bool is_block_style() const { return false; }
+  virtual json::value to_json() const = 0;
   protected:
   Nitem(size_t row,size_t col);
-  Nitem()=default;
-  size_t row,col;
+  Nitem() : row(0), col(0) {}
+  size_t row = 0, col = 0;
 };
 
 struct Nstat:public Nitem{
@@ -42,6 +44,7 @@ struct Nstat:public Nitem{
   Nstat();
   virtual expr_t get_value() override;
   expr_t evaluate(std::vector<expr_t>&&args);
+  virtual json::value to_json() const override;
   ~Nstat();
 };
 
@@ -52,6 +55,7 @@ class Nexpr:public Nitem{
   public:
   Nexpr(size_t row,size_t col, op_t op, Nitem*lhs, Nitem*rhs=nullptr, Nitem*ths=nullptr);
   virtual expr_t get_value()override;
+  virtual json::value to_json() const override;
   ~Nexpr();
   private:
   expr_t eval_uop();
@@ -72,6 +76,7 @@ class Ndecl:public Nitem{
   Ndecl(std::string_view name,Nitem*init,Nstat*belong_to);
   ~Ndecl();
   virtual expr_t get_value()override;
+  virtual json::value to_json() const override;
   void move_to(Nstat*belong_to);
   std::string_view get_name()const;
 };
@@ -81,6 +86,7 @@ class Nvar:public Nitem{
   public:
   Nvar(size_t row,size_t col,std::string_view name);
   virtual expr_t get_value()override;
+  virtual json::value to_json() const override;
   std::string_view get_name()const;
   ~Nvar()=default;
 };
@@ -90,6 +96,7 @@ class Nliteral:public Nitem{
   public:
   Nliteral(size_t row,size_t col,expr_t&&value);
   virtual expr_t get_value()override;
+  virtual json::value to_json() const override;
   ~Nliteral()=default;
 };
 
@@ -100,6 +107,7 @@ class Nfn:public Nitem{
   public:
   Nfn(size_t row,size_t col,std::string_view name,std::vector<Nitem*>&&args);
   virtual expr_t get_value()override;
+  virtual json::value to_json() const override;
   ~Nfn();
   private:
   expr_t eval_reserved_fn();
@@ -113,6 +121,7 @@ public:
   Nif(size_t row, size_t col, Nitem* cond, Nitem* then_expr, Nitem* else_expr = nullptr);
   virtual expr_t get_value() override;
   virtual bool is_block_style() const override { return true; }
+  virtual json::value to_json() const override;
   ~Nif();
 };
 
@@ -123,6 +132,7 @@ public:
   Nwhile(size_t row, size_t col, Nitem* cond, Nitem* body);
   virtual expr_t get_value() override;
   virtual bool is_block_style() const override { return true; }
+  virtual json::value to_json() const override;
   ~Nwhile();
 };
 
@@ -134,6 +144,7 @@ public:
   Nfor(size_t row, size_t col, std::string_view var_name, Nitem* range_expr, Nitem* body);
   virtual expr_t get_value() override;
   virtual bool is_block_style() const override { return true; }
+  virtual json::value to_json() const override;
   ~Nfor();
 };
 
@@ -144,6 +155,7 @@ public:
   Nlambda(size_t row, size_t col, std::vector<std::string>&& args, Nstat* body);
   virtual expr_t get_value() override;
   virtual bool is_block_style() const override { return true; }
+  virtual json::value to_json() const override;
   ~Nlambda();
 };
 
@@ -153,6 +165,7 @@ class Npipeline : public Nitem {
 public:
   Npipeline(size_t row, size_t col, Nitem* lhs, Nitem* rhs);
   virtual expr_t get_value() override;
+  virtual json::value to_json() const override;
   ~Npipeline();
 };
 
@@ -162,6 +175,7 @@ class Nns_resolve : public Nitem {
 public:
   Nns_resolve(size_t row, size_t col, std::string_view alias, std::string_view name);
   virtual expr_t get_value() override;
+  virtual json::value to_json() const override;
   ~Nns_resolve() = default;
 };
 
@@ -172,14 +186,16 @@ class Nrange : public Nitem {
 public:
   Nrange(size_t row, size_t col, Nitem* start_expr, Nitem* end_expr, bool is_inclusive);
   virtual expr_t get_value() override;
+  virtual json::value to_json() const override;
   ~Nrange();
 };
 
 class Nvector : public Nitem {
   std::vector<Nitem*> elements;
 public:
-  Nvector(size_t row, size_t col, std::vector<Nitem*>&& elements);
+  Nvector(size_t row,size_t col,std::vector<Nitem*>&& elements);
   virtual expr_t get_value() override;
+  virtual json::value to_json() const override;
   ~Nvector();
 };
 
@@ -188,8 +204,9 @@ class Nmatrix : public Nitem {
   size_t cols;
   std::vector<Nitem*> elements;
 public:
-  Nmatrix(size_t row, size_t col, size_t rows, size_t cols, std::vector<Nitem*>&& elements);
+  Nmatrix(size_t row,size_t col,size_t rows,size_t cols,std::vector<Nitem*>&& elements);
   virtual expr_t get_value() override;
+  virtual json::value to_json() const override;
   ~Nmatrix();
 };
 

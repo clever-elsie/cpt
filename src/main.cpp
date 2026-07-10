@@ -81,6 +81,12 @@ int main(int argc, char**argv){
       if(cin_backup) std::cin.rdbuf(cin_backup);
       return 0; // 空入力
     }
+    if(INPUT::dump_ast){
+      std::cout << json::to_readable(stat->to_json()) << std::endl;
+      delete stat;
+      if(cin_backup) std::cin.rdbuf(cin_backup);
+      return 0;
+    }
     expr_t ret=stat->evaluate({});
     print_expr(ret);
     delete stat;

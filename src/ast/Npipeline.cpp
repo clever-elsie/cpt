@@ -54,4 +54,14 @@ expr_t Npipeline::get_value() {
   throw std::runtime_error("パイプラインの右辺はイテレータアダプタ関数または関数オブジェクトでなければなりません");
 }
 
+json::value Npipeline::to_json() const {
+  json::value v;
+  v["type"] = "pipeline";
+  v["lhs"] = lhs ? lhs->to_json() : json::value();
+  v["rhs"] = rhs ? rhs->to_json() : json::value();
+  v["row"] = (int64_t)row;
+  v["col"] = (int64_t)col;
+  return v;
+}
+
 } // namespace AST

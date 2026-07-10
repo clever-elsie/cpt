@@ -13,4 +13,14 @@ expr_t Nns_resolve::get_value() {
   return itr->second.back();
 }
 
+json::value Nns_resolve::to_json() const {
+  json::value v;
+  v["type"] = "ns_resolve";
+  v["alias"] = alias;
+  v["name"] = name;
+  v["row"] = (int64_t)row;
+  v["col"] = (int64_t)col;
+  return v;
+}
+
 } // namespace AST

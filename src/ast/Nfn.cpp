@@ -102,4 +102,19 @@ expr_t Nfn::eval_reserved_fn(){
     throw; // エラー対策
   }
 }
+
+json::value Nfn::to_json() const {
+  json::value v;
+  v["type"] = "fn";
+  v["name"] = name;
+  json::value::array_t arr;
+  for (auto arg : args) {
+    arr.push_back(arg ? arg->to_json() : json::value());
+  }
+  v["args"] = arr;
+  v["row"] = (int64_t)row;
+  v["col"] = (int64_t)col;
+  return v;
+}
+
 } // namespace AST

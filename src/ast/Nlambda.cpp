@@ -24,4 +24,18 @@ expr_t Nlambda::get_value() {
   return expr_t(l);
 }
 
+json::value Nlambda::to_json() const {
+  json::value v;
+  v["type"] = "lambda";
+  json::value::array_t arr;
+  for (const auto& arg : args) {
+    arr.push_back(json::value(arg));
+  }
+  v["args"] = arr;
+  v["body"] = body ? body->to_json() : json::value();
+  v["row"] = (int64_t)row;
+  v["col"] = (int64_t)col;
+  return v;
+}
+
 } // namespace AST

@@ -38,4 +38,14 @@ void Ndecl::move_to(Nstat*belong_to){
     belong_to->var_names.push_back(name);
 }
 
+json::value Ndecl::to_json() const {
+  json::value v;
+  v["type"] = "decl";
+  v["name"] = name;
+  v["init"] = init ? init->to_json() : json::value();
+  v["row"] = (int64_t)row;
+  v["col"] = (int64_t)col;
+  return v;
+}
+
 } // namespace AST

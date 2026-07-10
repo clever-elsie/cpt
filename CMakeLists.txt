@@ -18,6 +18,7 @@ endif()
 
 # Boostの多倍長整数を使っているので、Boostを探す
 find_package(Boost REQUIRED)
+find_package(jpp REQUIRED)
 
 include_directories(
     ${Boost_INCLUDE_DIRS}
@@ -31,7 +32,7 @@ file(GLOB_RECURSE SOURCES
 
 add_executable(cpt ${SOURCES})
 
-target_link_libraries(cpt PRIVATE ${Boost_LIBRARIES}) 
+target_link_libraries(cpt PRIVATE ${Boost_LIBRARIES} jpp::jpp) 
 
 # make install で /usr/local/bin にインストール
 install(TARGETS cpt DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

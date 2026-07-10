@@ -20,4 +20,19 @@ expr_t Nmatrix::get_value() {
   return expr_t(m);
 }
 
+json::value Nmatrix::to_json() const {
+  json::value v;
+  v["type"] = "matrix";
+  v["rows"] = (int64_t)rows;
+  v["cols"] = (int64_t)cols;
+  json::value::array_t arr;
+  for (auto elem : elements) {
+    arr.push_back(elem ? elem->to_json() : json::value());
+  }
+  v["elements"] = arr;
+  v["row"] = (int64_t)row;
+  v["col"] = (int64_t)col;
+  return v;
+}
+
 } // namespace AST

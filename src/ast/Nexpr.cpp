@@ -154,5 +154,43 @@ expr_t Nexpr::eval_top(){
   return true;
 }
 
+static std::string_view op_to_str(op_t op) {
+  switch(op) {
+    case op_t::NOP: return "NOP";
+    case op_t::NOT: return "NOT";
+    case op_t::NEG: return "NEG";
+    case op_t::FACT: return "FACT";
+    case op_t::ASSIGN: return "ASSIGN";
+    case op_t::ADD: return "ADD";
+    case op_t::SUB: return "SUB";
+    case op_t::MUL: return "MUL";
+    case op_t::POW: return "POW";
+    case op_t::FDIV: return "FDIV";
+    case op_t::IDIV: return "IDIV";
+    case op_t::MOD: return "MOD";
+    case op_t::LOR: return "LOR";
+    case op_t::LAND: return "LAND";
+    case op_t::EQ: return "EQ";
+    case op_t::NE: return "NE";
+    case op_t::LT: return "LT";
+    case op_t::GT: return "GT";
+    case op_t::LE: return "LE";
+    case op_t::GE: return "GE";
+    case op_t::BR: return "BR";
+  }
+  return "UNKNOWN";
+}
+
+json::value Nexpr::to_json() const {
+  json::value v;
+  v["type"] = "expr";
+  v["op"] = std::string(op_to_str(op));
+  v["lhs"] = lhs ? lhs->to_json() : json::value();
+  if (rhs) v["rhs"] = rhs->to_json();
+  if (ths) v["ths"] = ths->to_json();
+  v["row"] = (int64_t)row;
+  v["col"] = (int64_t)col;
+  return v;
+}
 
 } // namespace AST

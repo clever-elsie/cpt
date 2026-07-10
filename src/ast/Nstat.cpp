@@ -35,4 +35,22 @@ Nstat::~Nstat(){
   for(auto&&item:items) delete item;
 }
 
+json::value Nstat::to_json() const {
+  json::value v;
+  v["type"] = "stat";
+  json::value::array_t arr;
+  for (auto child : items) {
+    arr.push_back(child ? child->to_json() : json::value());
+  }
+  v["items"] = arr;
+  json::value::array_t vars;
+  for (const auto& var : var_names) {
+    vars.push_back(json::value(var));
+  }
+  v["var_names"] = vars;
+  v["row"] = (int64_t)row;
+  v["col"] = (int64_t)col;
+  return v;
+}
+
 } // namespace AST

@@ -9,6 +9,7 @@
 namespace INPUT{
 
 int print_precision = -1;
+bool dump_ast = false;
 
 template<class CharT, class Traits>
 std::string get_source_from_stream(std::basic_istream<CharT,Traits>&istr){
@@ -49,6 +50,8 @@ std::string get_all_source_input(int argc, char**argv){
       } else {
         throw std::runtime_error("エラー: -p / --precision オプションには整数値が必要です。");
       }
+    } else if(argv[i]==std::string_view("--ast")){
+      dump_ast = true;
     } else {
       throw std::runtime_error("エラー: 無効な引数 '" + std::string(argv[i]) + "' が指定されました。\n"
                                "標準入力を使用するか、-f オプションでファイルパスを指定してください。\n"

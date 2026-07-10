@@ -21,4 +21,15 @@ expr_t Nif::get_value() {
   return expr_t(std::monostate{}); // VOID
 }
 
+json::value Nif::to_json() const {
+  json::value v;
+  v["type"] = "if";
+  v["cond"] = cond ? cond->to_json() : json::value();
+  v["then"] = then_expr ? then_expr->to_json() : json::value();
+  if (else_expr) v["else"] = else_expr->to_json();
+  v["row"] = (int64_t)row;
+  v["col"] = (int64_t)col;
+  return v;
+}
+
 } // namespace AST

@@ -15,4 +15,13 @@ std::string_view Nvar::get_name()const{
   return name;
 }
 
+json::value Nvar::to_json() const {
+  json::value v;
+  v["type"] = "var";
+  v["name"] = name;
+  v["row"] = (int64_t)row;
+  v["col"] = (int64_t)col;
+  return v;
+}
+
 } // namespace AST

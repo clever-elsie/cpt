@@ -43,4 +43,15 @@ expr_t Nfor::get_value() {
   return last_val;
 }
 
+json::value Nfor::to_json() const {
+  json::value v;
+  v["type"] = "for";
+  v["var_name"] = var_name;
+  v["range"] = range_expr ? range_expr->to_json() : json::value();
+  v["body"] = body ? body->to_json() : json::value();
+  v["row"] = (int64_t)row;
+  v["col"] = (int64_t)col;
+  return v;
+}
+
 } // namespace AST
