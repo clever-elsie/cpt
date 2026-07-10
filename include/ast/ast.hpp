@@ -28,6 +28,7 @@ struct Nitem{
   virtual ~Nitem()=default;
   void error_exit(std::string_view msg);
   std::pair<size_t,size_t> get_pos()const;
+  virtual bool is_block_style() const { return false; }
   protected:
   Nitem(size_t row,size_t col);
   Nitem()=default;
@@ -111,6 +112,7 @@ class Nif : public Nitem {
 public:
   Nif(size_t row, size_t col, Nitem* cond, Nitem* then_expr, Nitem* else_expr = nullptr);
   virtual expr_t get_value() override;
+  virtual bool is_block_style() const override { return true; }
   ~Nif();
 };
 
@@ -120,6 +122,7 @@ class Nwhile : public Nitem {
 public:
   Nwhile(size_t row, size_t col, Nitem* cond, Nitem* body);
   virtual expr_t get_value() override;
+  virtual bool is_block_style() const override { return true; }
   ~Nwhile();
 };
 
@@ -130,6 +133,7 @@ class Nfor : public Nitem {
 public:
   Nfor(size_t row, size_t col, std::string_view var_name, Nitem* range_expr, Nitem* body);
   virtual expr_t get_value() override;
+  virtual bool is_block_style() const override { return true; }
   ~Nfor();
 };
 
@@ -139,6 +143,7 @@ class Nlambda : public Nitem {
 public:
   Nlambda(size_t row, size_t col, std::vector<std::string>&& args, Nstat* body);
   virtual expr_t get_value() override;
+  virtual bool is_block_style() const override { return true; }
   ~Nlambda();
 };
 

@@ -154,6 +154,9 @@ AST::Nitem* term(tokenize&tok) {
   while(tok.top().type!=token_t::EMPTY){
     AST::op_t op=get_op(tok.top().symbol);
     if(op==AST::op_t::NOP&&is_multipliable(tok.top().symbol)){ // 演算子省略*
+      if(!items.empty() && items.back()->is_block_style()){
+        break;
+      }
       if(tok.top().type == token_t::IDENT){
         std::string_view text = tok.top().token;
         if(text == "let" || text == "def" || text == "import" ||

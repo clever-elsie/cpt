@@ -12,7 +12,19 @@ int print_precision = -1;
 
 template<class CharT, class Traits>
 std::string get_source_from_stream(std::basic_istream<CharT,Traits>&istr){
-  return std::string(std::istreambuf_iterator<CharT>(istr),std::istreambuf_iterator<CharT>());
+  std::string result;
+  std::string line;
+  while(std::getline(istr, line)){
+    result += line;
+    result += "\n";
+    std::string trimmed = line;
+    trimmed.erase(0, trimmed.find_first_not_of(" \t\r\n"));
+    trimmed.erase(trimmed.find_last_not_of(" \t\r\n") + 1);
+    if(trimmed == "exit" || trimmed == "exit;"){
+      break;
+    }
+  }
+  return result;
 }
 
 std::string get_all_source_input(int argc, char**argv){
