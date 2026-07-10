@@ -67,7 +67,12 @@ pToken tokenize::get_number() noexcept {
     }break;
     case Zero:{
       char c=std::tolower(*itr);
-      if(*itr=='.') state=dot;
+      if(*itr=='.'){
+        if(itr+1 != istr.end() && *(itr+1) == '.'){
+          goto ENDofLITERAL;
+        }
+        state=dot;
+      }
       else if(c=='e') state=e;
       else if(c=='b') state=binb;
       else if(c=='x') state=hexx;
@@ -75,7 +80,12 @@ pToken tokenize::get_number() noexcept {
       else goto ENDofLITERAL;
     }break;
     case Digit:{
-      if(*itr=='.') state=dot;
+      if(*itr=='.'){
+        if(itr+1 != istr.end() && *(itr+1) == '.'){
+          goto ENDofLITERAL;
+        }
+        state=dot;
+      }
       else if(std::tolower(*itr)=='e') state=e;
       else if(!std::isdigit(*itr)) goto ENDofLITERAL;
     }break;
@@ -117,26 +127,38 @@ pToken tokenize::get_number() noexcept {
 ENDofLITERAL:
   std::string_view ret(istr.begin(),itr);
   istr=std::string_view(itr,istr.end());
+  bool is_complex = false;
+  if(!istr.empty() && istr[0] == 'i'){
+    is_complex = true;
+    itr++;
+    ret = std::string_view(ret.data(), ret.size() + 1);
+    istr = std::string_view(itr, istr.end());
+  }
+  token_t t_type = token_t::DECIMAL;
   switch(state){
     case Zero:
-    case Digit:return{token_t::DECIMAL,symbol_t::NAS,ret.size(),ret}; break;
-    case Hex: return{token_t::HEX, symbol_t::NAS, ret.size(),ret}; break;
-    case Bin: return{token_t::BINARY, symbol_t::NAS,ret.size(),ret}; break;
-    case Float: return{token_t::FLOAT, symbol_t::NAS, ret.size(),ret}; break;
-    case Exp: return{token_t::FLOAT, symbol_t::NAS, ret.size(),ret}; break;
+    case Digit: t_type = is_complex ? token_t::COMPLEX : token_t::DECIMAL; break;
+    case Hex: t_type = token_t::HEX; break;
+    case Bin: t_type = token_t::BINARY; break;
+    case Float:
+    case Exp: t_type = is_complex ? token_t::COMPLEX : token_t::FLOAT; break;
     default:
       error_exit(__func__+std::string(" : 数値の解析に失敗しました"));
   }
   col+=ret.size();
-  return{token_t::DECIMAL, symbol_t::NAS, ret.size(), ret};
+  return{t_type, symbol_t::NAS, ret.size(), ret};
 }
 
 pToken tokenize::get_ident()noexcept{
   const token_t is_reserved = istr[0]=='\\'?token_t::RESERVED:token_t::IDENT;
   size_t i=1;
-  for(;i<istr.size();++i)
-    if(!std::isalnum(istr[i]))
-      break;
+  for(;i<istr.size();++i) {
+    if(is_reserved == token_t::RESERVED) {
+      if(!std::isalnum(istr[i])) break;
+    } else {
+      if(!std::isalnum(istr[i]) && istr[i] != '_') break;
+    }
+  }
   std::string_view ret(istr.begin(),i);
   istr=std::string_view(istr.begin()+i,istr.end());
   if(is_reserved==token_t::RESERVED){
@@ -179,6 +201,24 @@ bool tokenize::skip_whitespace_and_comment()noexcept{
 
 pToken tokenize::get_token()noexcept{
   if(skip_whitespace_and_comment()) return {token_t::EMPTY, symbol_t::NAS, 0, std::string_view()};
+  if(istr[0] == '"' || istr[0] == '\''){
+    char quote = istr[0];
+    size_t i = 1;
+    while(i < istr.size() && istr[i] != quote){
+      if(istr[i] == '\\' && i + 1 < istr.size()){
+        i += 2;
+      }else{
+        i++;
+      }
+    }
+    if(i >= istr.size()){
+      error_exit("文字列リテラルが閉じられていません");
+    }
+    std::string_view ret(istr.begin(), i + 1);
+    istr = std::string_view(istr.begin() + i + 1, istr.end());
+    col += ret.size();
+    return {token_t::STRING, symbol_t::NAS, ret.size(), ret};
+  }
   if(std::isdigit(istr[0])) 
     return get_number();
   if(std::isalpha(istr[0])||istr[0]=='\\')
@@ -203,12 +243,21 @@ pToken tokenize::get_token()noexcept{
     case '+': sym=symbol_t::PLUS; break;
     case ',': sym=symbol_t::COMMA; break;
     case '-': sym=symbol_t::MINUS; break;
+    case '.':
+      if(istr.size()>1&&istr[1]=='.'){
+        if(istr.size()>2&&istr[2]=='=') sym=symbol_t::DOTDOT_EQ, cnt=3;
+        else sym=symbol_t::DOTDOT, cnt=2;
+      }else{
+        sym=symbol_t::DOT;
+      }
+      break;
     case '/':
       if(istr.size()>1&&istr[1]=='/') sym=symbol_t::IDIV, cnt=2;
       else sym=symbol_t::FDIV;
       break;
     case ':':
       if(istr.size()>1&&istr[1]=='=') sym=symbol_t::ASSIGN, cnt=2;
+      else if(istr.size()>1&&istr[1]==':') sym=symbol_t::CC, cnt=2;
       else sym=symbol_t::COLON;
       break;
     case ';': sym=symbol_t::SEMICOLON; break;
@@ -227,9 +276,12 @@ pToken tokenize::get_token()noexcept{
     case '?': sym=symbol_t::QUEST; break;
     case '^': sym=symbol_t::CARET; break;
     case '_': sym=symbol_t::UNDERSCORE; break;
+    case '[': sym=symbol_t::LSQUARE; break;
+    case ']': sym=symbol_t::RSQUARE; break;
     case '{': sym=symbol_t::LCURLY; break;
-    case '|': sym=symbol_t::LOR;
-      if(istr.size()>1&&istr[1]=='|') cnt=2;
+    case '|':
+      if(istr.size()>1&&istr[1]=='|') sym=symbol_t::LOR, cnt=2;
+      else sym=symbol_t::PIPE, cnt=1;
       break;
     case '}': sym=symbol_t::RCURLY; break;
     default:

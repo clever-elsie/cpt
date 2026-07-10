@@ -1,0 +1,3 @@
+import "test/basic/math_lib.cpt" as m;
+\print(m::pi)
+\print(m::square(5))

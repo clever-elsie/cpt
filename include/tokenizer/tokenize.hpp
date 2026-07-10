@@ -11,7 +11,7 @@ enum class except{
 };
 
 enum class token_t{
-  DECIMAL, HEX, BINARY, FLOAT,
+  DECIMAL, HEX, BINARY, FLOAT, COMPLEX, STRING,
   RESERVED, IDENT, SYMBOL, EMPTY
 };
 
@@ -19,7 +19,8 @@ enum class symbol_t{
   NAS, // not a symbol
   PLUS, MINUS, MUL, POW, // + - * **
   FDIV, IDIV, MOD, // / // %
-  LAND, LOR, // && &, || |
+  LAND, LOR, // && &, ||
+  PIPE, // |
   EXCL, QUEST, // ! ?
   ASSIGN, EQ, EEQ, // := = ==
   NE, LT, LE, GT, GE, // != < <= > >=
@@ -27,6 +28,8 @@ enum class symbol_t{
   LSQUARE, RSQUARE, // []
   LCURLY, RCURLY, // {}
   COMMA, DOT, SEMICOLON, COLON, // , . ; :
+  CC, // ::
+  DOTDOT, DOTDOT_EQ, // ..  ..=
   UNDERSCORE, // _
   CARET, // ^
 };
@@ -56,6 +59,7 @@ class tokenize{
   void error_exit(const std::string_view&msg)noexcept;
   void error_throw(const std::string&msg)noexcept(false);
   std::pair<size_t,size_t> get_pos()const noexcept;
+  std::string_view get_remaining()const noexcept { return istr; }
   private:
   std::string gen_error_msg(const std::string_view&msg)const;
   pToken get_token()noexcept;

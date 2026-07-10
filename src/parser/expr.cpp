@@ -19,7 +19,7 @@ AST::Nitem* expr(tokenize&tok) {
 }
 
 AST::Nitem* expr_3(tokenize&tok){
-  AST::Nitem* e1=or_expr(tok);
+  AST::Nitem* e1=pipe_expr(tok);
   if(tok.top().type!=token_t::EMPTY && tok.top().symbol==symbol_t::QUEST){
     tok.next_token(); // ?を消費
     AST::Nitem* e2=expr(tok);
@@ -31,5 +31,16 @@ AST::Nitem* expr_3(tokenize&tok){
     return new AST::Nexpr(row,col,AST::op_t::BR,e1,e2,e3);
   }
   return e1; // ?:ではない
+}
+
+AST::Nitem* pipe_expr(tokenize&tok){
+  AST::Nitem* ret = or_expr(tok);
+  while(tok.top().symbol == symbol_t::PIPE){
+    auto [row, col] = tok.get_pos();
+    tok.next_token();
+    AST::Nitem* rhs = or_expr(tok);
+    ret = new AST::Npipeline(row, col, ret, rhs);
+  }
+  return ret;
 }
 } // namespace EXPR

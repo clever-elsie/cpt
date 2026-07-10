@@ -1,0 +1,14 @@
+let A = [1, 2; 3, 4];
+let B = [5, 6; 7, 8];
+\print(A + B)
+\print(A - B)
+\print(A * B)
+\print(A * 2)
+\print(2 * A)
+let Ainv = A^{-1};
+\print(Ainv)
+let I = A * Ainv;
+\print(I)
+\print(A / B)
+\print(\T(A))
+\print(\dot(A, B))

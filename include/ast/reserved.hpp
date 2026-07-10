@@ -22,4 +22,15 @@ expr_t ceil(std::vector<Nitem*>&args);
 expr_t floor(std::vector<Nitem*>&args);
 expr_t round(std::vector<Nitem*>&args);
 expr_t trunc(std::vector<Nitem*>&args);
+expr_t T(std::vector<Nitem*>&args);
+expr_t t(std::vector<Nitem*>&args);
+expr_t dot(std::vector<Nitem*>&args);
+expr_t read(std::vector<Nitem*>&args);
+expr_t input(std::vector<Nitem*>&args);
+expr_t take(std::vector<Nitem*>&args);
+expr_t drop(std::vector<Nitem*>&args);
+expr_t filter(std::vector<Nitem*>&args);
+expr_t transform(std::vector<Nitem*>&args);
+expr_t enumerate(std::vector<Nitem*>&args);
+expr_t reverse(std::vector<Nitem*>&args);
 }// namespace EXPR

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iterator>
 #include <filesystem>
+#include <vector>
 #include "input/input.hpp"
 
 namespace INPUT{
@@ -13,18 +14,34 @@ std::string get_source_from_stream(std::basic_istream<CharT,Traits>&istr){
 }
 
 std::string get_all_source_input(int argc, char**argv){
-  namespace fs=std::filesystem;
   if(argc==1) // 入力は標準入力から
     return get_source_from_stream(std::cin);
-  //ファイルが存在するならそれを入力とする
-  if(argc==3){
-    if(argv[1]==std::string_view("-f")){
-      if(std::ifstream ifile(argv[2]);ifile)
-        return get_source_from_stream(ifile);
-    }else if(argv[2]==std::string_view("-f"))
-      if(std::ifstream ifile(argv[1]);ifile)
-        return get_source_from_stream(ifile);
+  
+  bool has_f = false;
+  std::vector<std::string> file_paths;
+  for(int i=1; i<argc; ++i){
+    if(argv[i]==std::string_view("-f")){
+      has_f = true;
+      if(i+1 < argc){
+        file_paths.push_back(argv[i+1]);
+        ++i;
+      }
+    }
   }
+
+  if(has_f){
+    std::string combined;
+    for(const auto& path : file_paths){
+      if(std::ifstream ifile(path); ifile){
+        combined += get_source_from_stream(ifile);
+        combined += "\n";
+      }else{
+        throw std::runtime_error("ファイルを開くことができませんでした: " + path);
+      }
+    }
+    return combined;
+  }
+
   std::string buffer;
   for(int i=1;i<argc;++i){
     buffer+=argv[i];

@@ -3,15 +3,56 @@
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <string>
 #include <variant>
+#include <vector>
+#include <memory>
+#include <complex>
+#include <unordered_map>
+
 namespace mp=boost::multiprecision;
 using bint=mp::cpp_int;
 using bfloat=mp::cpp_dec_float_50;
+using bcomplex=std::complex<bfloat>;
+
+namespace AST{
+struct Nstat;
+}
+
+struct Matrix {
+  size_t rows;
+  size_t cols;
+  std::vector<class expr_t> data;
+};
+
+struct Range {
+  bint start;
+  bint end;
+  bool is_inclusive;
+};
+
+struct LambdaFunc {
+  std::vector<std::string> args;
+  AST::Nstat* body;
+  std::unordered_map<std::string, class expr_t> closure_env;
+  ~LambdaFunc();
+};
 
 class expr_t{
-  std::variant<bint,bfloat,bool,std::vector<expr_t>> value;
+  std::variant<
+    std::monostate,               // VOID (0)
+    bint,                         // BINT (1)
+    bfloat,                       // BFLOAT (2)
+    bool,                         // BOOL (3)
+    bcomplex,                     // COMPLEX (4)
+    std::vector<expr_t>,          // VECTOR (5)
+    std::shared_ptr<Matrix>,      // MATRIX (6)
+    std::shared_ptr<Range>,       // RANGE (7)
+    std::shared_ptr<LambdaFunc>,  // FUNCTION (8)
+    std::string                   // STRING (9)
+  > value;
   public:
   enum class types{
-    BINT, BFLOAT, BOOL, VECTOR
+    VOID = 0, BINT = 1, BFLOAT = 2, BOOL = 3, COMPLEX = 4,
+    VECTOR = 5, MATRIX = 6, RANGE = 7, FUNCTION = 8, STRING = 9
   };
   expr_t()=default;
   expr_t(const expr_t&other)=default;
@@ -46,6 +87,7 @@ class expr_t{
   operator bool()const;
   operator bint()const;
   operator bfloat()const;
+  operator bcomplex()const;
   private:
   static types common_type(const expr_t&lhs,const expr_t&rhs);
 };

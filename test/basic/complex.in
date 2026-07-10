@@ -1,4 +1,4 @@
-let cmpLogic = 1<2 & 2<3 | 3==3;
+let cmpLogic = 1<2 && 2<3 || 3==3;
 let cmpChain = 1<2<3<4;
 
 def add1(a){ a+1; }

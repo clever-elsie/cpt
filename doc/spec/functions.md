@@ -64,6 +64,41 @@ def functionName(args,...){
 
 ---
 
+## 標準入力
+```
+\read()
+\input()
+```
+- 入力ストリームから1行ずつトークン/数値を読み込みます。
+
+## 線形代数
+```
+\T(A)
+\t(A)
+\dot(A, B)
+```
+- `\T`: 行列の転置を返す。
+- `\t`: 行列の複素共役転置を返す。
+- `\dot`: 行列/ベクトルの要素ごとの積（アダマール積）を返す。
+
+## イテレータアダプタ (遅延評価)
+```
+iterable | \take(k)
+iterable | \drop(k)
+iterable | \filter(pred)
+iterable | \transform(pred)
+iterable | \enumerate()
+iterable | \reverse()
+```
+- `take(k)`: 先頭から `k` 個の要素を取得。
+- `drop(k)`: 先頭から `k` 個の要素をスキップ。
+- `filter(pred)`: 条件 `pred` に合致する要素を抽出。
+- `transform(pred)`: 各要素に関数 `pred` を適用。
+- `enumerate()`: 各要素とインデックスのペアを取得。
+- `reverse()`: 逆順にする。
+
+---
+
 ### 実装済み組み込み関数一覧
 - `\print`
 - `\abs`
@@ -73,6 +108,9 @@ def functionName(args,...){
 - `\sinh`, `\cosh`, `\tanh`
 - `\sum`, `\prod`
 - `\ceil`, `\floor`, `\round`, `\trunc`
+- `\read`, `\input`
+- `\T`, `\t`, `\dot`
+- `\take`, `\drop`, `\filter`, `\transform`, `\enumerate`, `\reverse`
 
 
 

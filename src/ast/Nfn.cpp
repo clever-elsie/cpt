@@ -13,26 +13,72 @@ Nfn::~Nfn(){
 
 expr_t Nfn::get_value(){
   if(name.starts_with("\\")) return eval_reserved_fn();
+  
+  Nstat* fn_stat = nullptr;
+  std::unordered_map<std::string, expr_t> closure;
+  bool is_lambda = false;
+
   auto fn=fn_map.find(name);
-  if(fn==fn_map.end()) throw std::runtime_error("未定義の関数");
-  Nstat*fn_stat=fn->second;
-  std::vector<expr_t>args;
+  if(fn != fn_map.end()){
+    fn_stat = fn->second;
+  } else {
+    auto var = var_map.find(name);
+    if(var != var_map.end() && !var->second.empty()){
+      expr_t val = var->second.back();
+      if(val.is<expr_t::types::FUNCTION>()){
+        auto l = val.get<std::shared_ptr<LambdaFunc>>();
+        fn_stat = l->body;
+        closure = l->closure_env;
+        is_lambda = true;
+      }
+    }
+  }
+
+  if(!fn_stat) throw std::runtime_error("未定義の関数: " + name);
+
+  std::vector<expr_t> args_eval;
   for(auto&&arg:this->args)
-    args.push_back(arg->get_value());
-  expr_t ret=fn_stat->evaluate(std::move(args));
+    args_eval.push_back(arg->get_value());
+  
+  if(is_lambda){
+    for(const auto& [vname, vval] : closure){
+      var_map[vname].push_back(vval);
+    }
+  }
+
+  expr_t ret;
+  try {
+    ret = fn_stat->evaluate(std::move(args_eval));
+  } catch (...) {
+    if(is_lambda){
+      for(const auto& [vname, vval] : closure){
+        var_map[vname].pop_back();
+      }
+    }
+    throw;
+  }
+
+  if(is_lambda){
+    for(const auto& [vname, vval] : closure){
+      var_map[vname].pop_back();
+    }
+  }
   return ret;
 }
 
-constexpr std::array<std::pair<std::string_view,expr_t(*)(std::vector<Nitem*>&)>,19>
+constexpr std::array<std::pair<std::string_view,expr_t(*)(std::vector<Nitem*>&)>,30>
 construct_reserved_fnlist(){
   using fn_t=expr_t(*)(std::vector<Nitem*>&);
   using fn_p_t=std::pair<std::string_view,fn_t>;
   #define def(name) fn_p_t{#name, name}
-  std::array<fn_p_t,19> list{
+  std::array<fn_p_t,30> list{
     def(log),def(sum),def(prod),def(abs),def(log10),
     def(cos),def(sin),def(tan),def(acos),def(asin),
     def(atan),def(cosh),def(sinh),def(tanh),def(print),
     def(ceil),def(floor),def(round),def(trunc),
+    def(T),def(t),def(dot),def(read),def(input),
+    def(take),def(drop),def(filter),def(transform),
+    def(enumerate),def(reverse),
   };
   #undef def
   std::sort(list.begin(),list.end());

@@ -1,0 +1,4 @@
+let val = \input();
+\print(val)
+exit
+42.5

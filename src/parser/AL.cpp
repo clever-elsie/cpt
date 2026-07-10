@@ -66,7 +66,7 @@ AST::Nitem* and_expr(tokenize&tok) {
 AST::Nitem* compare(tokenize&tok) {
   std::vector<AST::Nitem*> items;
   std::vector<symbol_t> ops;
-  items.push_back(algebra(tok));
+  items.push_back(range_expr(tok));
   while(true){
     if(auto sym=tok.top().symbol;
       sym==symbol_t::LT||sym==symbol_t::GT||sym==symbol_t::LE||sym==symbol_t::GE
@@ -74,7 +74,7 @@ AST::Nitem* compare(tokenize&tok) {
       ops.push_back(sym);
     else break;
     tok.next_token();
-    items.push_back(algebra(tok));
+    items.push_back(range_expr(tok));
   }
   if(items.size()==1) return items.front();
   auto get_op=[](symbol_t sym)-> AST::op_t {
@@ -95,6 +95,18 @@ AST::Nitem* compare(tokenize&tok) {
     front=new AST::Nexpr(row,col,get_op(ops[i]),i==0?items[i]:nullptr,items[i+1],front);
   }
   return front;
+}
+
+AST::Nitem* range_expr(tokenize&tok){
+  AST::Nitem* lhs = algebra(tok);
+  if(tok.top().symbol == symbol_t::DOTDOT || tok.top().symbol == symbol_t::DOTDOT_EQ){
+    bool inclusive = (tok.top().symbol == symbol_t::DOTDOT_EQ);
+    auto [row, col] = tok.get_pos();
+    tok.next_token();
+    AST::Nitem* rhs = algebra(tok);
+    return new AST::Nrange(row, col, lhs, rhs, inclusive);
+  }
+  return lhs;
 }
 
 AST::Nitem* algebra(tokenize&tok) {
@@ -121,8 +133,16 @@ bool is_multipliable(symbol_t sym){
     case symbol_t::COMMA:
     case symbol_t::RPAREN:
     case symbol_t::RCURLY:
+    case symbol_t::LCURLY:
+    case symbol_t::RSQUARE:
+    case symbol_t::LSQUARE:
+    case symbol_t::DOTDOT:
+    case symbol_t::DOTDOT_EQ:
+    case symbol_t::CC:
+    case symbol_t::PIPE:
     case symbol_t::COLON:
     case symbol_t::QUEST: return false;
+    default: break;
   }
   return true;
 }
@@ -134,6 +154,13 @@ AST::Nitem* term(tokenize&tok) {
   while(tok.top().type!=token_t::EMPTY){
     AST::op_t op=get_op(tok.top().symbol);
     if(op==AST::op_t::NOP&&is_multipliable(tok.top().symbol)){ // 演算子省略*
+      if(tok.top().type == token_t::IDENT){
+        std::string_view text = tok.top().token;
+        if(text == "let" || text == "def" || text == "import" ||
+           text == "if" || text == "while" || text == "for" || text == "else" || text == "exit"){
+          break;
+        }
+      }
       items.push_back(factor(tok));
       ops.push_back(AST::op_t::MUL);
     }else if(op==AST::op_t::MUL||op==AST::op_t::MOD||op==AST::op_t::FDIV||op==AST::op_t::IDIV){

@@ -4,6 +4,12 @@
 
 namespace AST{
 
+Nstat::Nstat() : Nitem(0, 0) {}
+
+expr_t Nstat::get_value() {
+  return evaluate({});
+}
+
 expr_t Nstat::evaluate(std::vector<expr_t>&&args){
   if(args.size()!=this->args.size())
     throw std::runtime_error("引数の数が一致しません");

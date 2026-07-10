@@ -8,6 +8,7 @@ namespace AST{
 
 inline VAR_MAP<expr_t> var_map;
 inline FN_MAP fn_map;
+inline std::string input_buffer;
 
 enum class id_t{
   uop, bop, top,
@@ -33,11 +34,12 @@ struct Nitem{
   size_t row,col;
 };
 
-struct Nstat{
+struct Nstat:public Nitem{
   std::vector<Nitem*> items;
   std::vector<std::string> args,var_names;
   std::unordered_set<std::string,MAP_VAR_FN::StringHash,MAP_VAR_FN::StringEqual> args_set, var_names_set;
-  Nstat()=default;
+  Nstat();
+  virtual expr_t get_value() override;
   expr_t evaluate(std::vector<expr_t>&&args);
   ~Nstat();
 };
@@ -91,6 +93,7 @@ class Nliteral:public Nitem{
 };
 
 class Nfn:public Nitem{
+  friend class Npipeline;
   std::string name;
   std::vector<Nitem*> args;
   public:
@@ -99,6 +102,90 @@ class Nfn:public Nitem{
   ~Nfn();
   private:
   expr_t eval_reserved_fn();
+};
+
+class Nif : public Nitem {
+  Nitem* cond;
+  Nitem* then_expr;
+  Nitem* else_expr;
+public:
+  Nif(size_t row, size_t col, Nitem* cond, Nitem* then_expr, Nitem* else_expr = nullptr);
+  virtual expr_t get_value() override;
+  ~Nif();
+};
+
+class Nwhile : public Nitem {
+  Nitem* cond;
+  Nitem* body;
+public:
+  Nwhile(size_t row, size_t col, Nitem* cond, Nitem* body);
+  virtual expr_t get_value() override;
+  ~Nwhile();
+};
+
+class Nfor : public Nitem {
+  std::string var_name;
+  Nitem* range_expr;
+  Nitem* body;
+public:
+  Nfor(size_t row, size_t col, std::string_view var_name, Nitem* range_expr, Nitem* body);
+  virtual expr_t get_value() override;
+  ~Nfor();
+};
+
+class Nlambda : public Nitem {
+  std::vector<std::string> args;
+  Nstat* body;
+public:
+  Nlambda(size_t row, size_t col, std::vector<std::string>&& args, Nstat* body);
+  virtual expr_t get_value() override;
+  ~Nlambda();
+};
+
+class Npipeline : public Nitem {
+  Nitem* lhs;
+  Nitem* rhs;
+public:
+  Npipeline(size_t row, size_t col, Nitem* lhs, Nitem* rhs);
+  virtual expr_t get_value() override;
+  ~Npipeline();
+};
+
+class Nns_resolve : public Nitem {
+  std::string alias;
+  std::string name;
+public:
+  Nns_resolve(size_t row, size_t col, std::string_view alias, std::string_view name);
+  virtual expr_t get_value() override;
+  ~Nns_resolve() = default;
+};
+
+class Nrange : public Nitem {
+  Nitem* start_expr;
+  Nitem* end_expr;
+  bool is_inclusive;
+public:
+  Nrange(size_t row, size_t col, Nitem* start_expr, Nitem* end_expr, bool is_inclusive);
+  virtual expr_t get_value() override;
+  ~Nrange();
+};
+
+class Nvector : public Nitem {
+  std::vector<Nitem*> elements;
+public:
+  Nvector(size_t row, size_t col, std::vector<Nitem*>&& elements);
+  virtual expr_t get_value() override;
+  ~Nvector();
+};
+
+class Nmatrix : public Nitem {
+  size_t rows;
+  size_t cols;
+  std::vector<Nitem*> elements;
+public:
+  Nmatrix(size_t row, size_t col, size_t rows, size_t cols, std::vector<Nitem*>&& elements);
+  virtual expr_t get_value() override;
+  ~Nmatrix();
 };
 
 }// namespace AST
