@@ -8,6 +8,8 @@
 
 namespace INPUT{
 
+int print_precision = -1;
+
 template<class CharT, class Traits>
 std::string get_source_from_stream(std::basic_istream<CharT,Traits>&istr){
   return std::string(std::istreambuf_iterator<CharT>(istr),std::istreambuf_iterator<CharT>());
@@ -25,7 +27,20 @@ std::string get_all_source_input(int argc, char**argv){
       if(i+1 < argc){
         file_paths.push_back(argv[i+1]);
         ++i;
+      } else {
+        throw std::runtime_error("エラー: -f オプションにはファイルパスが必要です。");
       }
+    } else if(argv[i]==std::string_view("-p") || argv[i]==std::string_view("--precision")){
+      if(i+1 < argc){
+        print_precision = std::stoi(argv[i+1]);
+        ++i;
+      } else {
+        throw std::runtime_error("エラー: -p / --precision オプションには整数値が必要です。");
+      }
+    } else {
+      throw std::runtime_error("エラー: 無効な引数 '" + std::string(argv[i]) + "' が指定されました。\n"
+                               "標準入力を使用するか、-f オプションでファイルパスを指定してください。\n"
+                               "例: echo '\\i + \\i' | cpt  または  cpt -f file.cpt [-p 桁数]");
     }
   }
 
@@ -42,8 +57,6 @@ std::string get_all_source_input(int argc, char**argv){
     return combined;
   }
 
-  throw std::runtime_error("エラー: コマンドライン引数による数式の直接実行は廃止されました。\n"
-                           "標準入力を使用するか、-f オプションでファイルパスを指定してください。\n"
-                           "例: echo '\\i + \\i' | cpt  または  cpt -f file.cpt");
+  return get_source_from_stream(std::cin);
 }
 } // namespace INPUT

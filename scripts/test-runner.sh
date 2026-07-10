@@ -76,7 +76,12 @@ for input_file in $input_files; do
     temp_output=$(mktemp)
     
     # cptでテストを実行
-    if $CPT_EXEC < "$input_file" > "$temp_output" 2>&1; then
+    opts_file="${input_file%.in}.opts"
+    opts=""
+    if [ -f "$opts_file" ]; then
+        opts=$(cat "$opts_file")
+    fi
+    if $CPT_EXEC $opts < "$input_file" > "$temp_output" 2>&1; then
         # 出力を比較
         if diff -q "$temp_output" "$output_file" > /dev/null 2>&1; then
             print_success "テスト $test_name が成功しました"

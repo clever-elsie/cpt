@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include "input/input.hpp"
 #include "parser/top.hpp"
 
@@ -45,7 +46,16 @@ void print_expr(const expr_t& e) {
 }
 
 int main(int argc, char**argv){
-  std::string src = INPUT::get_all_source_input(argc,argv);
+  std::string src;
+  try {
+    src = INPUT::get_all_source_input(argc,argv);
+  } catch (const std::runtime_error& e) {
+    std::cerr<<e.what()<<std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  if(INPUT::print_precision >= 0){
+    std::cout << std::setprecision(INPUT::print_precision);
+  }
   try{
     AST::Nstat*stat=PARSER::top(std::string_view(src.begin(),src.end()));
     expr_t ret=stat->evaluate({});
