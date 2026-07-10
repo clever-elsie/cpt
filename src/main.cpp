@@ -18,14 +18,6 @@ void print_expr_internal(const expr_t& e) {
     else std::cout << c.imag() << "i";
   } else if (e.is<expr_t::types::STRING>()) {
     std::cout << e.get<std::string>();
-  } else if (e.is<expr_t::types::VECTOR>()) {
-    std::cout << "[";
-    const auto& v = e.get<std::vector<expr_t>>();
-    for (size_t i=0; i<v.size(); ++i) {
-      print_expr_internal(v[i]);
-      if (i + 1 < v.size()) std::cout << ", ";
-    }
-    std::cout << "]";
   } else if (e.is<expr_t::types::MATRIX>()) {
     auto m = e.get<std::shared_ptr<Matrix>>();
     std::cout << "[";

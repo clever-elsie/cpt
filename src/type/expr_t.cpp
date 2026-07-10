@@ -1,5 +1,10 @@
 #include "type/expr_t.hpp"
 
+static bool is_scalar_type(expr_t::types t) {
+  return t == expr_t::types::BINT || t == expr_t::types::BFLOAT ||
+         t == expr_t::types::COMPLEX || t == expr_t::types::BOOL;
+}
+
 static std::string type_name(const expr_t& e) {
   auto t = e.type();
   switch(t) {
@@ -8,7 +13,6 @@ static std::string type_name(const expr_t& e) {
     case expr_t::types::BFLOAT: return "BFLOAT";
     case expr_t::types::BOOL: return "BOOL";
     case expr_t::types::COMPLEX: return "COMPLEX";
-    case expr_t::types::VECTOR: return "VECTOR";
     case expr_t::types::MATRIX: return "MATRIX";
     case expr_t::types::RANGE: return "RANGE";
     case expr_t::types::STRING: return "STRING";
@@ -25,6 +29,7 @@ static std::string type_name(const expr_t& e) {
   }
   return "UNKNOWN";
 }
+
 
 expr_t::types expr_t::common_type(const expr_t&lhs,const expr_t&rhs){
   types lt=lhs.type(),rt=rhs.type();
@@ -99,7 +104,7 @@ expr_t::types expr_t::type()const{
 }
 
 size_t expr_t::size()const{
-  if(type()==types::VECTOR) return get<std::vector<expr_t>>().size();
+  if(type()==types::MATRIX) return get<std::shared_ptr<Matrix>>()->data.size();
   return 1;
 }
 
@@ -218,6 +223,19 @@ bool operator||(const expr_t&lhs,const expr_t&rhs){
 }
 
 bool operator==(const expr_t&lhs,const expr_t&rhs){
+  auto lt = lhs.type(), rt = rhs.type();
+  if(lt == expr_t::types::MATRIX && rt == expr_t::types::MATRIX){
+    auto lm = lhs.get<std::shared_ptr<Matrix>>();
+    auto rm = rhs.get<std::shared_ptr<Matrix>>();
+    if(lm->rows != rm->rows || lm->cols != rm->cols) return false;
+    for(size_t i=0; i<lm->data.size(); ++i){
+      if(lm->data[i] != rm->data[i]) return false;
+    }
+    return true;
+  }
+  if((lt == expr_t::types::MATRIX && is_scalar_type(rt)) || (is_scalar_type(lt) && rt == expr_t::types::MATRIX)){
+    throw std::runtime_error("行列とスカラーの比較は定義されません");
+  }
   switch(expr_t::common_type(lhs,rhs)){
     case expr_t::types::BINT:
       return (bint)lhs==(bint)rhs;
@@ -227,13 +245,6 @@ bool operator==(const expr_t&lhs,const expr_t&rhs){
       return (bool)lhs==(bool)rhs;
     case expr_t::types::COMPLEX:
       return (bcomplex)lhs==(bcomplex)rhs;
-    case expr_t::types::VECTOR:
-      const size_t lsz=lhs.size(),rsz=rhs.size();
-      if(lsz!=rsz) return false;
-      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
-      for(size_t i=0;i<lsz;++i)
-        if(lv[i]!=rv[i]) return false;
-      return true;
   }
   return false;
 }
@@ -248,14 +259,6 @@ bool operator<(const expr_t&lhs,const expr_t&rhs){
     case expr_t::types::BFLOAT: return (bfloat)lhs<(bfloat)rhs;
     case expr_t::types::BOOL: return (bool)lhs<(bool)rhs;
     case expr_t::types::COMPLEX: throw std::runtime_error("複素数の大小比較は定義されません");
-    case expr_t::types::VECTOR:
-      const size_t lsz=lhs.size(),rsz=rhs.size();
-      const size_t minsz=std::min(lsz,rsz);
-      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
-      for(size_t i=0;i<minsz;++i)
-        if(lv[i]<rv[i]) return true;
-        else if(lv[i]>rv[i]) return false;
-      return lsz<rsz;
   }
   return false;
 }
@@ -289,12 +292,6 @@ expr_t expr_t::operator-()const{
       for(size_t i=0; i<m->data.size(); ++i) ret->data[i] = -m->data[i];
       return ret;
     }
-    case types::VECTOR:
-      const size_t lsz=size();
-      std::vector<expr_t> ret(lsz);
-      const auto&v=get<std::vector<expr_t>>();
-      for(size_t i=0;i<lsz;++i) ret[i]=-v[i];
-      return ret;
   }
   return expr_t();
 }
@@ -314,18 +311,31 @@ expr_t operator+(const expr_t&lhs,const expr_t&rhs){
       ret->data[i] = lm->data[i] + rm->data[i];
     return ret;
   }
+  if(lt == expr_t::types::MATRIX && is_scalar_type(rt)){
+    auto lm = lhs.get<std::shared_ptr<Matrix>>();
+    auto ret = std::make_shared<Matrix>();
+    ret->rows = lm->rows;
+    ret->cols = lm->cols;
+    ret->data.resize(lm->data.size());
+    for(size_t i=0; i<lm->data.size(); ++i)
+      ret->data[i] = lm->data[i] + rhs;
+    return ret;
+  }
+  if(is_scalar_type(lt) && rt == expr_t::types::MATRIX){
+    auto rm = rhs.get<std::shared_ptr<Matrix>>();
+    auto ret = std::make_shared<Matrix>();
+    ret->rows = rm->rows;
+    ret->cols = rm->cols;
+    ret->data.resize(rm->data.size());
+    for(size_t i=0; i<rm->data.size(); ++i)
+      ret->data[i] = lhs + rm->data[i];
+    return ret;
+  }
   switch(expr_t::common_type(lhs,rhs)){
     case expr_t::types::BINT: return (bint)lhs+(bint)rhs;
     case expr_t::types::BFLOAT: return (bfloat)lhs+(bfloat)rhs;
     case expr_t::types::BOOL: return bint((int)(bool)lhs+(int)(bool)rhs);
     case expr_t::types::COMPLEX: return (bcomplex)lhs+(bcomplex)rhs;
-    case expr_t::types::VECTOR:
-      const size_t lsz=lhs.size();
-      if(lsz!=rhs.size()) throw std::runtime_error("expr_t[]のサイズが異なります");
-      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
-      std::vector<expr_t> ret(lsz);
-      for(size_t i=0; i<lsz;++i) ret[i]=lv[i]+rv[i];
-      return ret;
   }
   return expr_t();
 }
@@ -345,18 +355,31 @@ expr_t operator-(const expr_t&lhs,const expr_t&rhs){
       ret->data[i] = lm->data[i] - rm->data[i];
     return ret;
   }
+  if(lt == expr_t::types::MATRIX && is_scalar_type(rt)){
+    auto lm = lhs.get<std::shared_ptr<Matrix>>();
+    auto ret = std::make_shared<Matrix>();
+    ret->rows = lm->rows;
+    ret->cols = lm->cols;
+    ret->data.resize(lm->data.size());
+    for(size_t i=0; i<lm->data.size(); ++i)
+      ret->data[i] = lm->data[i] - rhs;
+    return ret;
+  }
+  if(is_scalar_type(lt) && rt == expr_t::types::MATRIX){
+    auto rm = rhs.get<std::shared_ptr<Matrix>>();
+    auto ret = std::make_shared<Matrix>();
+    ret->rows = rm->rows;
+    ret->cols = rm->cols;
+    ret->data.resize(rm->data.size());
+    for(size_t i=0; i<rm->data.size(); ++i)
+      ret->data[i] = lhs - rm->data[i];
+    return ret;
+  }
   switch(expr_t::common_type(lhs,rhs)){
     case expr_t::types::BINT: return (bint)lhs-(bint)rhs;
     case expr_t::types::BFLOAT: return (bfloat)lhs-(bfloat)rhs;
     case expr_t::types::BOOL: return bint((int)(bool)lhs-(int)(bool)rhs);
     case expr_t::types::COMPLEX: return (bcomplex)lhs-(bcomplex)rhs;
-    case expr_t::types::VECTOR:
-      const size_t lsz=lhs.size();
-      if(lsz!=rhs.size()) throw std::runtime_error("expr_t[]のサイズが異なります");
-      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
-      std::vector<expr_t> ret(lsz);
-      for(size_t i=0; i<lsz;++i) ret[i]=lv[i]-rv[i];
-      return ret;
   }
   return expr_t();
 }
@@ -382,7 +405,7 @@ expr_t operator*(const expr_t&lhs,const expr_t&rhs){
     }
     return ret;
   }
-  if(lt == expr_t::types::MATRIX && (rt==expr_t::types::BINT||rt==expr_t::types::BFLOAT||rt==expr_t::types::COMPLEX||rt==expr_t::types::BOOL)){
+  if(lt == expr_t::types::MATRIX && is_scalar_type(rt)){
     auto lm = lhs.get<std::shared_ptr<Matrix>>();
     auto ret = std::make_shared<Matrix>();
     ret->rows = lm->rows;
@@ -392,7 +415,7 @@ expr_t operator*(const expr_t&lhs,const expr_t&rhs){
       ret->data[i] = lm->data[i] * rhs;
     return ret;
   }
-  if((lt==expr_t::types::BINT||lt==expr_t::types::BFLOAT||lt==expr_t::types::COMPLEX||lt==expr_t::types::BOOL) && rt == expr_t::types::MATRIX){
+  if(is_scalar_type(lt) && rt == expr_t::types::MATRIX){
     auto rm = rhs.get<std::shared_ptr<Matrix>>();
     auto ret = std::make_shared<Matrix>();
     ret->rows = rm->rows;
@@ -407,20 +430,32 @@ expr_t operator*(const expr_t&lhs,const expr_t&rhs){
     case expr_t::types::BFLOAT: return (bfloat)lhs*(bfloat)rhs;
     case expr_t::types::BOOL: return (bool)lhs&&(bool)rhs;
     case expr_t::types::COMPLEX: return (bcomplex)lhs*(bcomplex)rhs;
-    case expr_t::types::VECTOR:
-      const size_t lsz=lhs.size();
-      if(lsz!=rhs.size()) throw std::runtime_error("expr_t[]のサイズが異なります");
-      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
-      std::vector<expr_t> ret(lsz);
-      for(size_t i=0;i<lsz;++i) ret[i]=lv[i]*rv[i];
-      return ret;
   }
   return expr_t();
 }
 
 expr_t operator/(const expr_t&lhs,const expr_t&rhs){
   auto lt = lhs.type(), rt = rhs.type();
-  if(rt == expr_t::types::MATRIX){
+  if(lt == expr_t::types::MATRIX && rt == expr_t::types::MATRIX){
+    auto lm = lhs.get<std::shared_ptr<Matrix>>();
+    auto rm = rhs.get<std::shared_ptr<Matrix>>();
+    auto rm_inv = invert_matrix(rm);
+    return lhs * expr_t(rm_inv);
+  }
+  if(lt == expr_t::types::MATRIX && is_scalar_type(rt)){
+    if(rhs == expr_t(bint(0))) {
+      throw std::runtime_error("ゼロ除算エラー");
+    }
+    auto lm = lhs.get<std::shared_ptr<Matrix>>();
+    auto ret = std::make_shared<Matrix>();
+    ret->rows = lm->rows;
+    ret->cols = lm->cols;
+    ret->data.resize(lm->data.size());
+    for(size_t i=0; i<lm->data.size(); ++i)
+      ret->data[i] = lm->data[i] / rhs;
+    return ret;
+  }
+  if(is_scalar_type(lt) && rt == expr_t::types::MATRIX){
     auto rm = rhs.get<std::shared_ptr<Matrix>>();
     auto rm_inv = invert_matrix(rm);
     return lhs * expr_t(rm_inv);
@@ -435,30 +470,33 @@ expr_t operator/(const expr_t&lhs,const expr_t&rhs){
     case expr_t::types::BFLOAT: return (bfloat)lhs/(bfloat)rhs;
     case expr_t::types::BOOL: return bint((int)(bool)lhs/(int)(bool)rhs);
     case expr_t::types::COMPLEX: return (bcomplex)lhs/(bcomplex)rhs;
-    case expr_t::types::VECTOR:
-      const size_t lsz=lhs.size();
-      if(lsz!=rhs.size()) throw std::runtime_error("expr_t[]のサイズが異なります");
-      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
-      std::vector<expr_t> ret(lsz);
-      for(size_t i=0;i<lsz;++i) ret[i]=lv[i]/rv[i];
-      return ret;
   }
   return expr_t();
 }
 
 expr_t operator%(const expr_t&lhs,const expr_t&rhs){
+  auto lt = lhs.type(), rt = rhs.type();
+  if(lt == expr_t::types::MATRIX && is_scalar_type(rt)){
+    if(rhs == expr_t(bint(0))) {
+      throw std::runtime_error("剰余演算のゼロ除算エラー");
+    }
+    auto lm = lhs.get<std::shared_ptr<Matrix>>();
+    auto ret = std::make_shared<Matrix>();
+    ret->rows = lm->rows;
+    ret->cols = lm->cols;
+    ret->data.resize(lm->data.size());
+    for(size_t i=0; i<lm->data.size(); ++i)
+      ret->data[i] = lm->data[i] % rhs;
+    return ret;
+  }
+  if(is_scalar_type(lt) && rt == expr_t::types::MATRIX){
+    throw std::runtime_error("スカラーに対する行列の剰余算は定義されません");
+  }
   switch(expr_t::common_type(lhs,rhs)){
     case expr_t::types::BINT: return (bint)lhs%(bint)rhs;
     case expr_t::types::BFLOAT: throw std::runtime_error("浮動小数点型の剰余演算は禁止");
     case expr_t::types::BOOL: return bint((int)(bool)lhs%(int)(bool)rhs);
     case expr_t::types::COMPLEX: throw std::runtime_error("複素数型の剰余演算は禁止");
-    case expr_t::types::VECTOR:
-      const size_t lsz=lhs.size();
-      if(lsz!=rhs.size()) throw std::runtime_error("expr_t[]のサイズが異なります");
-      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
-      std::vector<expr_t> ret(lsz);
-      for(size_t i=0;i<lsz;++i) ret[i]=lv[i]%rv[i];
-      return ret;
   }
   return expr_t();
 }
@@ -469,13 +507,6 @@ expr_t idiv(const expr_t&lhs,const expr_t&rhs){
     case expr_t::types::BFLOAT: return mp::trunc((bfloat)lhs/(bfloat)rhs);
     case expr_t::types::BOOL: return bint((int)(bool)lhs/(int)(bool)rhs);
     case expr_t::types::COMPLEX: throw std::runtime_error("複素数型の割り切り除算は禁止");
-    case expr_t::types::VECTOR:
-      const size_t lsz=lhs.size();
-      if(lsz!=rhs.size()) throw std::runtime_error("expr_t[]のサイズが異なります");
-      const auto&lv=lhs.get<std::vector<expr_t>>(),&rv=rhs.get<std::vector<expr_t>>();
-      std::vector<expr_t> ret(lsz);
-      for(size_t i=0;i<lsz;++i) ret[i]=lv[i]/rv[i];
-      return ret;
   }
   return expr_t();
 }

@@ -49,4 +49,6 @@ expr_t cols(std::vector<Nitem*>&args);
 expr_t arcsin(std::vector<Nitem*>&args);
 expr_t arccos(std::vector<Nitem*>&args);
 expr_t arctan(std::vector<Nitem*>&args);
+expr_t vector(std::vector<Nitem*>&args);
+expr_t rowvector(std::vector<Nitem*>&args);
 }// namespace AST

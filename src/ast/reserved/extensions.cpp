@@ -6,10 +6,10 @@
 
 namespace AST {
 
-// ヘルパー関数: イテレータの要素を VECTOR から取り出す
+// ヘルパー関数: イテレータの要素を MATRIX から取り出す
 static std::vector<expr_t> get_iterable_elements(expr_t val){
-  if(val.is<expr_t::types::VECTOR>()){
-    return val.get<std::vector<expr_t>>();
+  if(val.is<expr_t::types::MATRIX>()){
+    return val.get<std::shared_ptr<Matrix>>()->data;
   }
   if(val.is<expr_t::types::RANGE>()){
     auto r = val.get<std::shared_ptr<Range>>();
@@ -24,6 +24,14 @@ static std::vector<expr_t> get_iterable_elements(expr_t val){
     return ret;
   }
   throw std::runtime_error("イテレート可能なオブジェクトではありません");
+}
+
+static expr_t make_row_matrix(std::vector<expr_t>&& v){
+  auto ret = std::make_shared<Matrix>();
+  ret->rows = 1;
+  ret->cols = v.size();
+  ret->data = std::move(v);
+  return expr_t(ret);
 }
 
 // ヘルパー関数: 関数オブジェクト (ラムダ) の呼び出し
@@ -108,17 +116,7 @@ expr_t dot(std::vector<Nitem*>&args){
     }
     return expr_t(ret);
   }
-  if(lhs.is<expr_t::types::VECTOR>() && rhs.is<expr_t::types::VECTOR>()){
-    const auto& lv = lhs.get<std::vector<expr_t>>();
-    const auto& rv = rhs.get<std::vector<expr_t>>();
-    if(lv.size() != rv.size()) throw std::runtime_error("dot関数のベクトルサイズが一致しません");
-    std::vector<expr_t> ret(lv.size());
-    for(size_t i=0; i<lv.size(); ++i){
-      ret[i] = lv[i] * rv[i];
-    }
-    return expr_t(ret);
-  }
-  throw std::runtime_error("dot関数は行列またはベクトルに対してのみ定義されます");
+  throw std::runtime_error("dot関数は行列に対してのみ定義されます");
 }
 
 expr_t read_impl() {
@@ -188,7 +186,7 @@ expr_t take(std::vector<Nitem*>&args){
   for(bint i=0; i<k && i<elements.size(); ++i){
     ret.push_back(elements[static_cast<size_t>(i)]);
   }
-  return expr_t(ret);
+  return make_row_matrix(std::move(ret));
 }
 
 expr_t drop(std::vector<Nitem*>&args){
@@ -202,7 +200,7 @@ expr_t drop(std::vector<Nitem*>&args){
   for(size_t i=static_cast<size_t>(n); i<elements.size(); ++i){
     ret.push_back(elements[i]);
   }
-  return expr_t(ret);
+  return make_row_matrix(std::move(ret));
 }
 
 expr_t filter(std::vector<Nitem*>&args){
@@ -217,7 +215,7 @@ expr_t filter(std::vector<Nitem*>&args){
       ret.push_back(elem);
     }
   }
-  return expr_t(ret);
+  return make_row_matrix(std::move(ret));
 }
 
 expr_t transform(std::vector<Nitem*>&args){
@@ -229,7 +227,7 @@ expr_t transform(std::vector<Nitem*>&args){
   for(auto& elem : elements){
     ret.push_back(call_function_object(pred, {elem}));
   }
-  return expr_t(ret);
+  return make_row_matrix(std::move(ret));
 }
 
 expr_t enumerate(std::vector<Nitem*>&args){
@@ -238,12 +236,9 @@ expr_t enumerate(std::vector<Nitem*>&args){
   auto elements = get_iterable_elements(iterable);
   std::vector<expr_t> ret;
   for(size_t i=0; i<elements.size(); ++i){
-    std::vector<expr_t> pair;
-    pair.push_back(expr_t(bint(i)));
-    pair.push_back(elements[i]);
-    ret.push_back(expr_t(pair));
+    ret.push_back(make_row_matrix({expr_t(bint(i)), elements[i]}));
   }
-  return expr_t(ret);
+  return make_row_matrix(std::move(ret));
 }
 
 expr_t reverse(std::vector<Nitem*>&args){
@@ -251,7 +246,7 @@ expr_t reverse(std::vector<Nitem*>&args){
   expr_t iterable = args[0]->get_value();
   auto elements = get_iterable_elements(iterable);
   std::reverse(elements.begin(), elements.end());
-  return expr_t(elements);
+  return make_row_matrix(std::move(elements));
 }
 
 expr_t min(std::vector<Nitem*>&args){
@@ -330,9 +325,6 @@ expr_t rows(std::vector<Nitem*>&args){
   if(val.is<expr_t::types::MATRIX>()){
     return expr_t(bint(val.get<std::shared_ptr<Matrix>>()->rows));
   }
-  if(val.is<expr_t::types::VECTOR>()){
-    return expr_t(bint(val.get<std::vector<expr_t>>().size()));
-  }
   return expr_t(bint(1));
 }
 
@@ -342,14 +334,37 @@ expr_t cols(std::vector<Nitem*>&args){
   if(val.is<expr_t::types::MATRIX>()){
     return expr_t(bint(val.get<std::shared_ptr<Matrix>>()->cols));
   }
-  if(val.is<expr_t::types::VECTOR>()){
-    return expr_t(bint(1));
-  }
   return expr_t(bint(1));
 }
 
 expr_t arcsin(std::vector<Nitem*>&args){ return AST::asin(args); }
 expr_t arccos(std::vector<Nitem*>&args){ return AST::acos(args); }
 expr_t arctan(std::vector<Nitem*>&args){ return AST::atan(args); }
+
+expr_t vector(std::vector<Nitem*>&args){
+  if(args.size() != 1) throw std::runtime_error("vector関数には引数が1つ必要です");
+  expr_t n_val = args[0]->get_value();
+  if(!n_val.is<expr_t::types::BINT>()) throw std::runtime_error("vectorの次元は整数でなければなりません");
+  bint n = n_val.get<bint>();
+  if(n < 0) throw std::runtime_error("vectorの次元に負の数は指定できません");
+  auto ret = std::make_shared<Matrix>();
+  ret->rows = static_cast<size_t>(n);
+  ret->cols = 1;
+  ret->data.resize(ret->rows, expr_t(bint(0)));
+  return expr_t(ret);
+}
+
+expr_t rowvector(std::vector<Nitem*>&args){
+  if(args.size() != 1) throw std::runtime_error("rowvector関数には引数が1つ必要です");
+  expr_t n_val = args[0]->get_value();
+  if(!n_val.is<expr_t::types::BINT>()) throw std::runtime_error("rowvectorの次元は整数でなければなりません");
+  bint n = n_val.get<bint>();
+  if(n < 0) throw std::runtime_error("rowvectorの次元に負の数は指定できません");
+  auto ret = std::make_shared<Matrix>();
+  ret->rows = 1;
+  ret->cols = static_cast<size_t>(n);
+  ret->data.resize(ret->cols, expr_t(bint(0)));
+  return expr_t(ret);
+}
 
 } // namespace AST

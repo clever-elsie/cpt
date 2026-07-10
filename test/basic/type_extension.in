@@ -1,0 +1,6 @@
+let v = \vector(3);
+\print(v)
+let rv = \rowvector(3);
+\print(rv)
+\print(\T(v))
+\print(\T(rv))

@@ -87,10 +87,14 @@ def functionName(args,...){
 \T(A)
 \t(A)
 \dot(A, B)
+\vector(n)
+\rowvector(n)
 ```
 - `\T`: 行列の転置を返す。
 - `\t`: 行列の複素共役転置を返す。
-- `\dot`: 行列/ベクトルの要素ごとの積（アダマール積）を返す。
+- `\dot`: 行列の要素ごとの積（アダマール積）を返す。
+- `\vector(n)`: $n \times 1$ の列ベクトル（行列）を `0` で初期化して構築する。
+- `\rowvector(n)`: $1 \times n$ の行ベクトル（行列）を `0` で初期化して構築する。
 
 ## イテレータアダプタ (遅延評価)
 ```
@@ -120,7 +124,7 @@ iterable | \reverse()
 - `\sum`, `\prod`
 - `\ceil`, `\floor`, `\round`, `\trunc`
 - `\read`, `\input`
-- `\T`, `\t`, `\dot`
+- `\T`, `\t`, `\dot`, `\vector`, `\rowvector`
 - `\take`, `\drop`, `\filter`, `\transform`, `\enumerate`, `\reverse`
 
 

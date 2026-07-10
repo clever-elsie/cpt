@@ -190,14 +190,6 @@ public:
   ~Nrange();
 };
 
-class Nvector : public Nitem {
-  std::vector<Nitem*> elements;
-public:
-  Nvector(size_t row,size_t col,std::vector<Nitem*>&& elements);
-  virtual expr_t get_value() override;
-  virtual json::value to_json() const override;
-  ~Nvector();
-};
 
 class Nmatrix : public Nitem {
   size_t rows;

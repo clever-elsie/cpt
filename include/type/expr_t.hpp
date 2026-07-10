@@ -43,16 +43,15 @@ class expr_t{
     bfloat,                       // BFLOAT (2)
     bool,                         // BOOL (3)
     bcomplex,                     // COMPLEX (4)
-    std::vector<expr_t>,          // VECTOR (5)
-    std::shared_ptr<Matrix>,      // MATRIX (6)
-    std::shared_ptr<Range>,       // RANGE (7)
-    std::shared_ptr<LambdaFunc>,  // FUNCTION (8)
-    std::string                   // STRING (9)
+    std::shared_ptr<Matrix>,      // MATRIX (5)
+    std::shared_ptr<Range>,       // RANGE (6)
+    std::shared_ptr<LambdaFunc>,  // FUNCTION (7)
+    std::string                   // STRING (8)
   > value;
   public:
   enum class types{
     VOID = 0, BINT = 1, BFLOAT = 2, BOOL = 3, COMPLEX = 4,
-    VECTOR = 5, MATRIX = 6, RANGE = 7, FUNCTION = 8, STRING = 9
+    MATRIX = 5, RANGE = 6, FUNCTION = 7, STRING = 8
   };
   expr_t()=default;
   expr_t(const expr_t&other)=default;

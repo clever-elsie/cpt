@@ -239,7 +239,7 @@ AST::Nitem* parse_list(tokenize& tok){
   tok.next_token();
   if(tok.top().symbol == symbol_t::RSQUARE){
     tok.next_token();
-    return new AST::Nvector(row, col, {});
+    return new AST::Nmatrix(row, col, 0, 0, {});
   }
   std::vector<std::vector<AST::Nitem*>> grid;
   grid.push_back({});
@@ -263,7 +263,8 @@ AST::Nitem* parse_list(tokenize& tok){
   size_t rows = grid.size();
   size_t cols = grid[0].size();
   if(rows == 1){
-    return new AST::Nvector(row, col, std::move(grid[0]));
+    std::vector<AST::Nitem*> flat_elements = std::move(grid[0]);
+    return new AST::Nmatrix(row, col, 1, cols, std::move(flat_elements));
   }
   std::vector<AST::Nitem*> flat_elements;
   for(size_t i=0; i<rows; ++i){
