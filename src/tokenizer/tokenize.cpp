@@ -1,27 +1,46 @@
 #include "tokenizer/tokenize.hpp"
 
-tokenize::tokenize(std::string_view istr)noexcept:istr(istr),row(1),col(1){
+tokenize::tokenize(std::string_view istr, std::string_view file_name)noexcept:istr(istr),row(1),col(1),file_name(file_name){
   prev_linehead=istr.begin();
   first=get_token();
 }
 
 std::string tokenize::gen_error_msg(const std::string_view&msg)const{
-  std::string ret=std::string(msg)+" : "+std::to_string(row)+":"+std::to_string(col)+"\n";
-  auto itr=istr.begin();
-  for(;itr!=istr.end();++itr)
-    if(*itr=='\n'||*itr=='\r') break;
-  std::string_view line_view(itr-col+1,itr);
-  ret+=std::string(line_view)+"\n";
-  const size_t endofline=col-1-first.len;
-  for(size_t i=0;i<endofline;++i)
-    ret+=" ";
-  ret+="^\n";
+  // トークンの開始カラム位置（1-indexed）
+  size_t tok_start_col = col > first.len ? col - first.len : 1;
+  std::string ret = std::string(file_name) + ":" + std::to_string(row) + ":" + std::to_string(tok_start_col) + ": error: " + std::string(msg) + "\n";
+
+  // prev_lineheadから行末までを取得
+  auto line_start = prev_linehead;
+  auto line_end = line_start;
+  // istr の元のデータの終端を推定: istr.end() は残りの入力の終端
+  // prev_linehead は istr の元のバッファ内なので、istr.end() を超えない範囲で走査
+  // ただし istr が縮んでいる場合、prev_linehead の先は istr.end() の先にあることはない
+  // (prev_linehead は常に istr.begin() 以前のポインタか、istr.begin() そのもの)
+  // 安全のため: line_end を prev_linehead から istr.end() までの範囲で改行を探す
+  auto buf_end = istr.end();
+  // istr.begin() が prev_linehead より先なら buf_end を使える
+  // prev_linehead が istr.begin() より前の場合、istr の元のバッファ内であることが保証される
+  for(line_end = line_start; line_end != buf_end; ++line_end){
+    if(*line_end == '\n' || *line_end == '\r') break;
+  }
+
+  std::string_view line_view(line_start, line_end);
+  ret += std::string(line_view) + "\n";
+
+  // キャレットの位置（0-indexed のインデント）
+  size_t indent = tok_start_col > 0 ? tok_start_col - 1 : 0;
+  for(size_t i = 0; i < indent; ++i)
+    ret += " ";
+  ret += "^";
+  for(size_t i = 1; i < first.len; ++i)
+    ret += "~";
+  ret += "\n";
   return ret;
 }
 
-void tokenize::error_exit(const std::string_view&msg)noexcept{
-  std::cerr<<gen_error_msg(msg)<<std::endl;
-  std::exit(EXIT_FAILURE);
+void tokenize::error_exit(const std::string_view&msg)noexcept(false){
+  throw std::runtime_error(gen_error_msg(msg));
 }
 
 void tokenize::error_throw(const std::string&msg)noexcept(false){
@@ -143,7 +162,7 @@ ENDofLITERAL:
     case Float:
     case Exp: t_type = is_complex ? token_t::COMPLEX : token_t::FLOAT; break;
     default:
-      error_exit(__func__+std::string(" : 数値の解析に失敗しました"));
+      error_exit("数値の解析に失敗しました");
   }
   col+=ret.size();
   return{t_type, symbol_t::NAS, ret.size(), ret};
@@ -187,9 +206,16 @@ bool tokenize::skip_whitespace_and_comment()noexcept{
     auto itr=istr.begin();
     while(itr!=istr.end()&&std::isspace(*itr)){
       if(*itr=='\r'&&itr+1!=istr.end()&&*(itr+1)=='\n') ++itr;
-      if(*itr=='\n'||*itr=='\r') ++row,col=1;
-      ++itr,++col;
-      prev_linehead=itr;
+      if(*itr=='\n'||*itr=='\r'){
+        ++row;
+        col=0; // ++itr,++colで1になる
+        ++itr;
+        ++col;
+        prev_linehead=itr;
+      }else{
+        ++itr;
+        ++col;
+      }
     }
     if(is_comment=(itr!=istr.end()&&*itr=='#'))
       while(itr!=istr.end()&&(*itr!='\n'&&*itr!='\r')) ++itr;
@@ -285,7 +311,7 @@ pToken tokenize::get_token()noexcept{
       break;
     case '}': sym=symbol_t::RCURLY; break;
     default:
-      error_exit(__func__+std::string(" : ")+istr[0]+"は無効な記号です");
+      error_exit(std::string(1, istr[0]) + " は無効な記号です");
       break;
   }
   col+=cnt;

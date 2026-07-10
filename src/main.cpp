@@ -68,8 +68,19 @@ int main(int argc, char**argv){
   if(INPUT::print_precision >= 0){
     std::cout << std::setprecision(INPUT::print_precision);
   }
+  std::string file_name = "<stdin>";
+  for(int i=1; i<argc; ++i){
+    if(argv[i] == std::string_view("-f") && i+1 < argc){
+      file_name = argv[i+1];
+      break;
+    }
+  }
   try{
-    AST::Nstat*stat=PARSER::top(std::string_view(src.begin(),src.end()));
+    AST::Nstat*stat=PARSER::top(std::string_view(src.begin(),src.end()), file_name);
+    if(!stat){
+      if(cin_backup) std::cin.rdbuf(cin_backup);
+      return 0; // 空入力
+    }
     expr_t ret=stat->evaluate({});
     print_expr(ret);
     delete stat;

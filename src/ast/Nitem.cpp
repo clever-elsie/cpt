@@ -5,8 +5,7 @@ namespace AST{
 Nitem::Nitem(size_t row,size_t col):row(row),col(col){}
 
 void Nitem::error_exit(std::string_view msg){
-  std::cerr<<row<<":"<<col<<":"<<std::string(msg)<<std::endl;
-  std::exit(EXIT_FAILURE);
+  throw std::runtime_error(std::to_string(row)+":"+std::to_string(col)+": error: "+std::string(msg));
 }
 
 std::pair<size_t,size_t> Nitem::get_pos()const{

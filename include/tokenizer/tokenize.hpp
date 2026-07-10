@@ -46,22 +46,23 @@ class tokenize{
   pToken first;
   std::string_view istr;
   size_t row,col;
+  std::string file_name;
   public:
   tokenize()=delete;
   tokenize(const tokenize&)=default;
   tokenize(tokenize&&)=default;
-  tokenize(std::string_view istr)noexcept;
+  tokenize(std::string_view istr, std::string_view file_name = "<stdin>")noexcept;
   tokenize&operator=(const tokenize&)=default;
   tokenize&operator=(tokenize&&)=default;
   ~tokenize()=default;
   pToken next_token()noexcept;
   pToken top()noexcept;
-  void error_exit(const std::string_view&msg)noexcept;
+  void error_exit(const std::string_view&msg)noexcept(false);
   void error_throw(const std::string&msg)noexcept(false);
   std::pair<size_t,size_t> get_pos()const noexcept;
   std::string_view get_remaining()const noexcept { return istr; }
-  private:
   std::string gen_error_msg(const std::string_view&msg)const;
+  private:
   pToken get_token()noexcept;
   pToken get_number()noexcept;
   pToken get_ident()noexcept;

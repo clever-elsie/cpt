@@ -25,9 +25,9 @@ void init_constants() {
   AST::var_map["false"] = { expr_t(false) };
 }
 
-AST::Nstat* top(std::string_view istr){
+AST::Nstat* top(std::string_view istr, std::string_view file_name){
   init_constants();
-  tokenize tok(istr);
+  tokenize tok(istr, file_name);
   AST::Nstat*stat=new AST::Nstat();
   try{
     second(tok,false,stat);
@@ -58,7 +58,7 @@ void second(tokenize&tok,bool is_fn,AST::Nstat*parent,std::string_view ns_prefix
         break;
       }
       else if(tok.top().token=="def"){
-        if(is_fn) tok.error_exit(__func__+std::string(" : 関数の定義は関数内では行えません"));
+        if(is_fn) tok.error_exit("関数の定義は関数内では行えません");
         define_fn(tok,ns_prefix);
       }else if(tok.top().token=="import"){
         tok.next_token();
@@ -76,14 +76,21 @@ void second(tokenize&tok,bool is_fn,AST::Nstat*parent,std::string_view ns_prefix
         if(!ifile) tok.error_exit("インポート対象のファイルを開けませんでした: " + path);
         std::string import_src((std::istreambuf_iterator<char>(ifile)), std::istreambuf_iterator<char>());
         
-        tokenize import_tok(import_src);
+        tokenize import_tok(import_src, path);
         AST::Nstat* import_ast = new AST::Nstat();
         try {
           second(import_tok, false, import_ast, alias + "::");
+        } catch (const std::runtime_error& e) {
+          delete import_ast;
+          std::string new_msg = std::string(e.what()) + "\n" + tok.gen_error_msg("in import of " + path);
+          throw std::runtime_error(new_msg);
         } catch (const except& e) {
           delete import_ast;
           if(e == except::EMPTY) {
-          } else throw;
+          } else {
+            std::string new_msg = tok.gen_error_msg("in import of " + path);
+            throw std::runtime_error(new_msg);
+          }
         }
         for(auto item : import_ast->items){
           parent->items.push_back(item);
@@ -130,15 +137,15 @@ std::string error_ident(ident_error err,bool is_fn){
 AST::Ndecl* define_var(tokenize&tok,AST::Nstat*parent,std::string_view ns_prefix){
   tok.next_token();
   if(tok.top().type!=token_t::IDENT)
-    tok.error_exit(__func__+std::string(" : 変数名に使えない文字列が含まれてるかもね"));
+    tok.error_exit("変数名が不正です");
   std::string_view variable=tok.top().token;
   if(auto err=check_ident(variable);err!=ident_error::OK)
-    tok.error_exit(__func__+std::string(" : ")+error_ident(err,false));
+    tok.error_exit(error_ident(err,false));
   
   std::string full_var_name = std::string(ns_prefix) + std::string(variable);
   tok.next_token();
   if(tok.top().type!=token_t::SYMBOL||(tok.top().symbol!=symbol_t::ASSIGN&&tok.top().symbol!=symbol_t::EQ))
-    tok.error_exit(__func__+std::string(" : 宣言文では=か:=で代入してください．"));
+    tok.error_exit("宣言文では '=' か ':=' で代入してください");
   tok.next_token();
   AST::Nitem* expr=EXPR::expr(tok); // 例外は上へ
   if(parent&&parent->var_names_set.emplace(full_var_name).second) // set追加に失敗したら戻り値はfalse
@@ -149,40 +156,40 @@ AST::Ndecl* define_var(tokenize&tok,AST::Nstat*parent,std::string_view ns_prefix
 void define_fn(tokenize&tok,std::string_view ns_prefix){
   tok.next_token();
   if(tok.top().type!=token_t::IDENT)
-    tok.error_exit(__func__+std::string(" : 関数名に使えない文字列が含まれてるかもね"));
+    tok.error_exit("関数名が不正です");
   std::string_view fn_name=tok.top().token;
   if(auto err=check_ident(fn_name);err!=ident_error::OK)
-    tok.error_exit(__func__+std::string(" : ")+error_ident(err,true));
+    tok.error_exit(error_ident(err,true));
   std::string full_fn_name = std::string(ns_prefix) + std::string(fn_name);
   std::unordered_set<std::string,MAP_VAR_FN::StringHash,MAP_VAR_FN::StringEqual> Sargs;
   std::vector<std::string> args;
   AST::Nstat*body=new AST::Nstat();
   tok.next_token();
   if(tok.top().symbol!=symbol_t::LPAREN)
-    tok.error_exit(__func__+std::string(" : 関数の引数は()で囲んでください"));
+    tok.error_exit("関数の引数は () で囲んでください");
   tok.next_token();
   while(tok.top().type==token_t::IDENT){ // 引数
     if(auto err=check_ident(tok.top().token);err!=ident_error::OK)
-      tok.error_exit(__func__+std::string(" : ")+error_ident(err,false));
+      tok.error_exit(error_ident(err,false));
     if(!Sargs.emplace(tok.top().token).second)
-      tok.error_exit(__func__+std::string(" : 関数")+std::string(fn_name)+"の引数名が重複しています");
+      tok.error_exit(std::string("関数 ")+std::string(fn_name)+" の引数名が重複しています");
     args.emplace_back(tok.top().token);
     tok.next_token();
     if(tok.top().symbol==symbol_t::COMMA) tok.next_token();
     else break;
   }
   if(tok.top().symbol!=symbol_t::RPAREN)
-    tok.error_exit(__func__+std::string(" : 関数の引数は()で囲んでください"));
+    tok.error_exit("関数の引数リストの閉じかっこ ')' がありません");
   tok.next_token();
   if(tok.top().symbol!=symbol_t::LCURLY)
-    tok.error_exit(__func__+std::string(" : 関数の定義は{}で囲んでください"));
+    tok.error_exit("関数の定義は {} で囲んでください");
   tok.next_token(); // {を消費
   // 先に関数名だけ登録
   auto [it,success]=AST::fn_map.emplace(full_fn_name,nullptr);
   if(!success)
-    tok.error_exit(__func__+std::string(" : 関数")+full_fn_name+"が重複しています");
+    tok.error_exit("関数 " + full_fn_name + " が重複しています");
   second(tok,true,body);
-  if(tok.top().symbol!=symbol_t::RCURLY) tok.error_exit(__func__+std::string(" : 関数")+full_fn_name+"の定義が閉じられていません");
+  if(tok.top().symbol!=symbol_t::RCURLY) tok.error_exit("関数 " + full_fn_name + " の定義が閉じられていません");
   tok.next_token(); // }を消費
   body->args=std::move(args);
   body->args_set=std::move(Sargs);

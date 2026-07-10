@@ -24,7 +24,7 @@ AST::Nitem* expr_3(tokenize&tok){
     tok.next_token(); // ?を消費
     AST::Nitem* e2=expr(tok);
     if(tok.top().symbol!=symbol_t::COLON)
-      tok.error_exit(__func__+std::string(" : 三項演算子は : で区切った2つの式を必要とします"));
+      tok.error_exit("三項演算子は ':' で区切った2つの式を必要とします");
     tok.next_token(); // :を消費
     AST::Nitem* e3=expr(tok);
     auto [row,col]=e1->get_pos();
