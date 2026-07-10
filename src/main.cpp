@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include "input/input.hpp"
 #include "parser/top.hpp"
 
@@ -53,6 +54,17 @@ int main(int argc, char**argv){
     std::cerr<<e.what()<<std::endl;
     std::exit(EXIT_FAILURE);
   }
+
+  std::ifstream tty;
+  std::streambuf* cin_backup = nullptr;
+  if(std::cin.eof()){
+    std::cin.clear();
+    tty.open("/dev/tty");
+    if(tty.is_open()){
+      cin_backup = std::cin.rdbuf(tty.rdbuf());
+    }
+  }
+
   if(INPUT::print_precision >= 0){
     std::cout << std::setprecision(INPUT::print_precision);
   }
@@ -63,6 +75,9 @@ int main(int argc, char**argv){
     delete stat;
   }catch(const std::runtime_error&e){
     std::cerr<<e.what()<<std::endl;
+    if(cin_backup) std::cin.rdbuf(cin_backup);
     std::exit(EXIT_FAILURE);
   }catch(const except&e){}
+
+  if(cin_backup) std::cin.rdbuf(cin_backup);
 }
