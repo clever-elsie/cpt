@@ -48,7 +48,12 @@ void second(tokenize&tok,bool is_fn,AST::Nstat*parent,std::string_view ns_prefix
   while(true){
     skip_sep(tok);
     try{
-      if(tok.top().token=="let") parent->items.push_back(define_var(tok,parent,ns_prefix));
+      if(tok.top().token=="let"){
+        while(true){
+          parent->items.push_back(define_var(tok,parent,ns_prefix));
+          if(tok.top().symbol!=symbol_t::COMMA) break;
+        }
+      }
       else if(tok.top().token=="exit"){
         break;
       }
