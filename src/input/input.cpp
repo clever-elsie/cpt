@@ -42,12 +42,8 @@ std::string get_all_source_input(int argc, char**argv){
     return combined;
   }
 
-  std::string buffer;
-  for(int i=1;i<argc;++i){
-    buffer+=argv[i];
-    if(i+1!=argc)
-      buffer.push_back(' ');
-  }
-  return buffer;
+  throw std::runtime_error("エラー: コマンドライン引数による数式の直接実行は廃止されました。\n"
+                           "標準入力を使用するか、-f オプションでファイルパスを指定してください。\n"
+                           "例: echo '\\i + \\i' | cpt  または  cpt -f file.cpt");
 }
 } // namespace INPUT
