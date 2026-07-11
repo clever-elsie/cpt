@@ -18,7 +18,19 @@ endif()
 
 # Boostの多倍長整数を使っているので、Boostを探す
 find_package(Boost REQUIRED)
-find_package(jpp REQUIRED)
+
+find_package(jpp QUIET)
+if(NOT jpp_FOUND)
+    message(STATUS "jpp not found. Downloading and building jpp via FetchContent...")
+    include(FetchContent)
+    FetchContent_Declare(
+        jpp
+        GIT_REPOSITORY https://github.com/clever-elsie/jpp.git
+        GIT_TAG        main
+    )
+    FetchContent_MakeAvailable(jpp)
+endif()
+
 
 include_directories(
     ${Boost_INCLUDE_DIRS}
