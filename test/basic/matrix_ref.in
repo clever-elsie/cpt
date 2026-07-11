@@ -34,3 +34,11 @@ for row in \as_mat(v) {
 for elem in v {
   \print(elem);
 }
+
+let m_loop = [1, 2; 3, 4];
+for i in 0..4 {
+  let r = i // 2, c = i % 2;
+  m_loop[r][c] := m_loop[r][c] * (i + 1);
+}
+\print(m_loop);
+
