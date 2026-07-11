@@ -11,25 +11,31 @@ Nfor::~Nfor() {
 }
 
 expr_t Nfor::get_value() {
-  expr_t range_val = range_expr->get_value();
-  if(!range_val.is<expr_t::types::RANGE>())
-    throw std::runtime_error("forループの対象がRangeオブジェクトではありません");
-  
-  auto r = range_val.get<std::shared_ptr<Range>>();
-  bint start = r->start;
-  bint end = r->end;
-  bool inclusive = r->is_inclusive;
+  expr_t range_val = range_expr->get_value().deref();
+  std::vector<expr_t> elements;
+  if(range_val.is<expr_t::types::RANGE>()) {
+    auto r = range_val.get<std::shared_ptr<Range>>();
+    bint start = r->start;
+    bint end = r->end;
+    bool inclusive = r->is_inclusive;
+    bint current = start;
+    while(true){
+      bool cond = inclusive ? (current <= end) : (current < end);
+      if(!cond) break;
+      elements.push_back(expr_t(current));
+      current += 1;
+    }
+  } else if(range_val.is<expr_t::types::MATRIX>()) {
+    elements = range_val.get<std::shared_ptr<Matrix>>()->get_iterable_elements();
+  } else {
+    throw std::runtime_error("forループの対象がイテレート可能ではありません");
+  }
 
   expr_t last_val = expr_t(std::monostate{});
-
   auto& vec = var_map[var_name];
 
-  bint current = start;
-  while(true){
-    bool cond = inclusive ? (current <= end) : (current < end);
-    if(!cond) break;
-
-    vec.emplace_back(current);
+  for(auto& val : elements){
+    vec.emplace_back(val);
     try {
       last_val = body->get_value();
     } catch (...) {
@@ -37,7 +43,6 @@ expr_t Nfor::get_value() {
       throw;
     }
     vec.pop_back();
-    current += 1;
   }
 
   return last_val;

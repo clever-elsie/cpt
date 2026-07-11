@@ -1,4 +1,5 @@
 #include "parser/expr.hpp"
+#include <iostream>
 
 namespace EXPR{
 
@@ -182,16 +183,39 @@ AST::Nitem* term(tokenize&tok) {
 
 AST::Nitem* factor(tokenize&tok) {
   AST::Nitem* lhs=atom(tok);
+  while(true) {
+    if(tok.top().symbol == symbol_t::LSQUARE) {
+      auto [row, col] = tok.get_pos();
+      tok.next_token(); // consume '['
+      AST::Nitem* index1 = expr(tok);
+      if(tok.top().symbol != symbol_t::RSQUARE) {
+        tok.error_throw("閉じカッコ ']' がありません");
+      }
+      tok.next_token(); // consume ']'
+      
+      AST::Nitem* index2 = nullptr;
+      if(tok.top().symbol == symbol_t::LSQUARE) {
+        tok.next_token(); // consume '['
+        index2 = expr(tok);
+        if(tok.top().symbol != symbol_t::RSQUARE) {
+          tok.error_throw("閉じカッコ ']' がありません");
+        }
+        tok.next_token(); // consume ']'
+      }
+      lhs = new AST::Nsubscript(row, col, lhs, index1, index2);
+    } else if(tok.top().symbol == symbol_t::EXCL) {
+      tok.next_token();
+      auto [row, col] = lhs->get_pos();
+      lhs = new AST::Nexpr(row, col, AST::op_t::FACT, lhs, nullptr);
+    } else {
+      break;
+    }
+  }
   if(auto sym=tok.top().symbol;sym==symbol_t::CARET||sym==symbol_t::POW){
     tok.next_token();
     AST::Nitem* rhs=factor(tok);
     auto [row,col]=lhs->get_pos();
     return new AST::Nexpr(row,col,AST::op_t::POW,lhs,rhs);
-  }
-  while(tok.top().symbol==symbol_t::EXCL){ // 階乗
-    tok.next_token();
-    auto [row,col]=lhs->get_pos();
-    lhs=new AST::Nexpr(row,col,AST::op_t::FACT,lhs,nullptr);
   }
   return lhs;
 }

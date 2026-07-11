@@ -8,7 +8,8 @@ AST::Nitem* expr(tokenize&tok) {
     throw except::EMPTY;
   AST::Nitem* ret=expr_3(tok);
   while(tok.top().symbol==symbol_t::ASSIGN){
-    if(auto ptr=dynamic_cast<AST::Nvar*>(ret);ptr==nullptr)
+    bool is_lvalue = (dynamic_cast<AST::Nvar*>(ret) != nullptr || dynamic_cast<AST::Nsubscript*>(ret) != nullptr);
+    if(!is_lvalue)
       tok.error_throw("代入式の左辺は左辺値である必要があります．");
     tok.next_token();
     AST::Nitem* rhs=expr(tok);

@@ -173,7 +173,13 @@ pToken tokenize::get_ident()noexcept{
   size_t i=1;
   for(;i<istr.size();++i) {
     if(is_reserved == token_t::RESERVED) {
-      if(!std::isalnum(istr[i])) break;
+      if(!std::isalnum(istr[i])) {
+        if(istr[i] == '_' && i + 3 < istr.size() && istr.substr(i, 4) == "_mat") {
+          i += 3;
+        } else {
+          break;
+        }
+      }
     } else {
       if(!std::isalnum(istr[i]) && istr[i] != '_') break;
     }

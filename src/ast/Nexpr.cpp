@@ -1,4 +1,6 @@
 #include "ast/ast.hpp"
+#include <typeinfo>
+#include <iostream>
 
 namespace AST{
 
@@ -108,12 +110,49 @@ expr_t Nexpr::eval_bop(){
 
 inline expr_t Nexpr::eval_bop_assign(Nitem*lhs,Nitem*rhs){
   expr_t value=rhs->get_value();
+  
+  auto sub_ptr = dynamic_cast<Nsubscript*>(lhs);
+  if (sub_ptr != nullptr) {
+    expr_t ref_val = sub_ptr->get_reference();
+    if (ref_val.is<expr_t::types::REF>()) {
+      ref_val.get<std::shared_ptr<Ref>>()->set_value(value);
+      return value;
+    } else if (ref_val.is<expr_t::types::MATRIX>()) {
+      auto m_ref = ref_val.get<std::shared_ptr<Matrix>>();
+      if (value.is<expr_t::types::MATRIX>()) {
+        auto val_m = value.get<std::shared_ptr<Matrix>>();
+        if (m_ref->rows != val_m->rows || m_ref->cols != val_m->cols) {
+          throw std::runtime_error("代入する行列のサイズが一致しません");
+        }
+        for (size_t i = 0; i < m_ref->data.size(); ++i) {
+          if (m_ref->data[i].is<expr_t::types::REF>()) {
+            m_ref->data[i].get<std::shared_ptr<Ref>>()->set_value(val_m->data[i].deref());
+          }
+        }
+      } else {
+        for (size_t i = 0; i < m_ref->data.size(); ++i) {
+          if (m_ref->data[i].is<expr_t::types::REF>()) {
+            m_ref->data[i].get<std::shared_ptr<Ref>>()->set_value(value);
+          }
+        }
+      }
+      return value;
+    }
+    throw std::runtime_error("左辺値は参照可能である必要があります．");
+  }
+  
   auto ptr=dynamic_cast<Nvar*>(lhs);
   if(ptr==nullptr) throw std::runtime_error("左辺値の取得に失敗しました．");
   std::string_view name=ptr->get_name();
   auto itr=var_map.find(name);
   if(itr==var_map.end()||itr->second.empty())
     throw std::runtime_error(std::string(name)+"は未定義変数です");
+    
+  if (itr->second.back().is<expr_t::types::REF>()) {
+    itr->second.back().get<std::shared_ptr<Ref>>()->set_value(value);
+    return value;
+  }
+  
   return itr->second.back()=std::move(value);
 }
 

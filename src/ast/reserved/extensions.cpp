@@ -9,7 +9,7 @@ namespace AST {
 // ヘルパー関数: イテレータの要素を MATRIX から取り出す
 static std::vector<expr_t> get_iterable_elements(expr_t val){
   if(val.is<expr_t::types::MATRIX>()){
-    return val.get<std::shared_ptr<Matrix>>()->data;
+    return val.get<std::shared_ptr<Matrix>>()->get_iterable_elements();
   }
   if(val.is<expr_t::types::RANGE>()){
     auto r = val.get<std::shared_ptr<Range>>();
@@ -321,20 +321,20 @@ expr_t lb(std::vector<Nitem*>&args){
 
 expr_t rows(std::vector<Nitem*>&args){
   if(args.size() != 1) throw std::runtime_error("rowsの引数が1つではありません");
-  expr_t val = args[0]->get_value();
+  expr_t val = args[0]->get_value().deref();
   if(val.is<expr_t::types::MATRIX>()){
     return expr_t(bint(val.get<std::shared_ptr<Matrix>>()->rows));
   }
-  return expr_t(bint(1));
+  throw std::runtime_error("rows関数は行列に対してのみ適用できます");
 }
 
 expr_t cols(std::vector<Nitem*>&args){
   if(args.size() != 1) throw std::runtime_error("colsの引数が1つではありません");
-  expr_t val = args[0]->get_value();
+  expr_t val = args[0]->get_value().deref();
   if(val.is<expr_t::types::MATRIX>()){
     return expr_t(bint(val.get<std::shared_ptr<Matrix>>()->cols));
   }
-  return expr_t(bint(1));
+  throw std::runtime_error("cols関数は行列に対してのみ適用できます");
 }
 
 expr_t arcsin(std::vector<Nitem*>&args){ return AST::asin(args); }
@@ -364,6 +364,155 @@ expr_t rowvector(std::vector<Nitem*>&args){
   ret->rows = 1;
   ret->cols = static_cast<size_t>(n);
   ret->data.resize(ret->cols, expr_t(bint(0)));
+  return expr_t(ret);
+}
+
+static std::pair<size_t, size_t> resolve_range(const Range& r, size_t len) {
+  bint s = r.start;
+  bint e = r.end;
+  if (s < 0 || e < 0) {
+    throw std::runtime_error("範囲インデックスに負数は指定できません");
+  }
+  size_t start_idx = static_cast<size_t>(s);
+  size_t end_idx = static_cast<size_t>(e);
+  if (r.is_inclusive) {
+    if (start_idx > end_idx || end_idx >= len) {
+      throw std::runtime_error("範囲インデックスが範囲外です");
+    }
+    return { start_idx, end_idx + 1 };
+  } else {
+    if (start_idx > end_idx || end_idx > len) {
+      throw std::runtime_error("範囲インデックスが範囲外です");
+    }
+    return { start_idx, end_idx };
+  }
+}
+
+static std::pair<size_t, size_t> resolve_slice_arg(const expr_t& arg, size_t len) {
+  if (arg.is<expr_t::types::RANGE>()) {
+    return resolve_range(*arg.get<std::shared_ptr<Range>>(), len);
+  } else if (arg.is<expr_t::types::BINT>()) {
+    bint idx = arg.get<bint>();
+    if (idx < 0 || idx >= static_cast<bint>(len)) {
+      throw std::runtime_error("インデックスが範囲外です");
+    }
+    return { static_cast<size_t>(idx), static_cast<size_t>(idx) + 1 };
+  } else {
+    throw std::runtime_error("スライス指定は範囲または整数である必要があります");
+  }
+}
+
+expr_t copy(std::vector<Nitem*>&args) {
+  if (args.size() == 0) {
+    throw std::runtime_error("copy関数には少なくとも1つの引数が必要です");
+  }
+  expr_t val = args[0]->get_value();
+  if (args.size() == 1) {
+    if (!val.is<expr_t::types::MATRIX>()) {
+      return val.deref();
+    }
+    auto m = val.get<std::shared_ptr<Matrix>>();
+    auto ret = std::make_shared<Matrix>();
+    ret->rows = m->rows;
+    ret->cols = m->cols;
+    ret->is_as_mat = m->is_as_mat;
+    ret->data.resize(m->data.size());
+    for (size_t i = 0; i < m->data.size(); ++i) {
+      ret->data[i] = m->data[i].deref();
+    }
+    return expr_t(ret);
+  }
+  
+  if (!val.is<expr_t::types::MATRIX>()) {
+    throw std::runtime_error("copy関数の最初の引数は行列である必要があります");
+  }
+  auto m = val.get<std::shared_ptr<Matrix>>();
+  
+  if (args.size() == 2) {
+    // 1D slicing: M is a vector (1 x C or R x 1)
+    expr_t r_arg = args[1]->get_value().deref();
+    if (m->rows == 1) {
+      // Row vector: slice cols
+      std::pair<size_t, size_t> cols_slice = resolve_slice_arg(r_arg, m->cols);
+      size_t slice_len = cols_slice.second - cols_slice.first;
+      auto ret = std::make_shared<Matrix>();
+      ret->rows = 1;
+      ret->cols = slice_len;
+      ret->is_as_mat = m->is_as_mat;
+      ret->data.resize(slice_len);
+      for (size_t c = 0; c < slice_len; ++c) {
+        ret->data[c] = m->data[cols_slice.first + c].deref();
+      }
+      return expr_t(ret);
+    } else if (m->cols == 1) {
+      // Column vector: slice rows
+      std::pair<size_t, size_t> rows_slice = resolve_slice_arg(r_arg, m->rows);
+      size_t slice_len = rows_slice.second - rows_slice.first;
+      auto ret = std::make_shared<Matrix>();
+      ret->rows = slice_len;
+      ret->cols = 1;
+      ret->is_as_mat = m->is_as_mat;
+      ret->data.resize(slice_len);
+      for (size_t r = 0; r < slice_len; ++r) {
+        ret->data[r] = m->data[rows_slice.first + r].deref();
+      }
+      return expr_t(ret);
+    } else {
+      throw std::runtime_error("2次元の行列のスライスには2つの範囲指定が必要です");
+    }
+  } else if (args.size() == 3) {
+    // 2D slicing: M is a general matrix (R x C)
+    expr_t r_arg1 = args[1]->get_value().deref();
+    expr_t r_arg2 = args[2]->get_value().deref();
+    std::pair<size_t, size_t> rows_slice = resolve_slice_arg(r_arg1, m->rows);
+    std::pair<size_t, size_t> cols_slice = resolve_slice_arg(r_arg2, m->cols);
+    size_t r_len = rows_slice.second - rows_slice.first;
+    size_t c_len = cols_slice.second - cols_slice.first;
+    auto ret = std::make_shared<Matrix>();
+    ret->rows = r_len;
+    ret->cols = c_len;
+    ret->is_as_mat = m->is_as_mat;
+    ret->data.resize(r_len * c_len);
+    for (size_t r = 0; r < r_len; ++r) {
+      size_t orig_r = rows_slice.first + r;
+      for (size_t c = 0; c < c_len; ++c) {
+        size_t orig_c = cols_slice.first + c;
+        ret->data[r * c_len + c] = m->data[orig_r * m->cols + orig_c].deref();
+      }
+    }
+    return expr_t(ret);
+  }
+  throw std::runtime_error("copy関数の引数が多すぎます");
+}
+
+expr_t ref(std::vector<Nitem*>&args) {
+  if (args.size() != 1) throw std::runtime_error("ref関数には引数が1つ必要です");
+  auto var_ptr = dynamic_cast<Nvar*>(args[0]);
+  if (var_ptr != nullptr) {
+    auto r = std::make_shared<VariableRef>();
+    r->var_name = var_ptr->get_name();
+    return expr_t(r);
+  }
+  auto sub_ptr = dynamic_cast<Nsubscript*>(args[0]);
+  if (sub_ptr != nullptr) {
+    expr_t ref_val = sub_ptr->get_reference();
+    if (ref_val.is<expr_t::types::REF>()) {
+      return ref_val;
+    }
+  }
+  throw std::runtime_error("ref関数は変数または行列要素に対してのみ適用できます");
+}
+
+expr_t as_mat(std::vector<Nitem*>&args){
+  if(args.size() != 1) throw std::runtime_error("as_mat関数には引数が1つ必要です");
+  expr_t val = args[0]->get_value();
+  if(!val.is<expr_t::types::MATRIX>()) throw std::runtime_error("as_mat関数は行列に対してのみ適用できます");
+  auto m = val.get<std::shared_ptr<Matrix>>();
+  auto ret = std::make_shared<Matrix>();
+  ret->rows = m->rows;
+  ret->cols = m->cols;
+  ret->data = m->data;
+  ret->is_as_mat = true;
   return expr_t(ret);
 }
 

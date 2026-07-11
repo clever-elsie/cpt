@@ -16,5 +16,3 @@ let I = A * Ainv;
 \print(\cols(A))
 \print(\rows([1, 2, 3]))
 \print(\cols([1, 2, 3]))
-\print(\rows(1.5))
-\print(\cols(1.5))

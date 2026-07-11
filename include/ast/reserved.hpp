@@ -51,4 +51,7 @@ expr_t arccos(std::vector<Nitem*>&args);
 expr_t arctan(std::vector<Nitem*>&args);
 expr_t vector(std::vector<Nitem*>&args);
 expr_t rowvector(std::vector<Nitem*>&args);
+expr_t as_mat(std::vector<Nitem*>&args);
+expr_t copy(std::vector<Nitem*>&args);
+expr_t ref(std::vector<Nitem*>&args);
 }// namespace AST

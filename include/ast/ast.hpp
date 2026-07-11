@@ -191,6 +191,19 @@ public:
 };
 
 
+class Nsubscript : public Nitem {
+  Nitem* var_expr;
+  Nitem* index1;
+  Nitem* index2; // nullptr if single index
+public:
+  Nsubscript(size_t row, size_t col, Nitem* var_expr, Nitem* index1, Nitem* index2 = nullptr);
+  virtual expr_t get_value() override;
+  expr_t get_reference();
+  virtual json::value to_json() const override;
+  ~Nsubscript();
+};
+
+
 class Nmatrix : public Nitem {
   size_t rows;
   size_t cols;
