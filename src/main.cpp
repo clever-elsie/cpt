@@ -50,7 +50,9 @@ int main(int argc, char**argv){
 
   std::ifstream tty;
   std::streambuf* cin_backup = nullptr;
-  if(std::cin.eof()){
+  // 標準入力をソースとして読み切った場合だけTTYを復旧する。
+  // 直接評価・ファイル入力では標準入力は未消費なので、\input()の入力元を差し替えない。
+  if(INPUT::mode == INPUT::input_mode::standard_input && std::cin.eof()){
     std::cin.clear();
     tty.open("/dev/tty");
     if(tty.is_open()){
@@ -61,15 +63,8 @@ int main(int argc, char**argv){
   if(INPUT::print_precision >= 0){
     std::cout << std::setprecision(INPUT::print_precision);
   }
-  std::string file_name = "<stdin>";
-  for(int i=1; i<argc; ++i){
-    if(argv[i] == std::string_view("-f") && i+1 < argc){
-      file_name = argv[i+1];
-      break;
-    }
-  }
   try{
-    AST::Nstat*stat=PARSER::top(std::string_view(src.begin(),src.end()), file_name);
+    AST::Nstat*stat=PARSER::top(std::string_view(src.begin(),src.end()), INPUT::source_name);
     if(!stat){
       if(cin_backup) std::cin.rdbuf(cin_backup);
       return 0; // 空入力
