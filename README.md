@@ -27,9 +27,14 @@ cptは多倍長整数・多倍長浮動小数点による数式計算，LaTeX風
 ```sh
 # Ubuntu / Debian（WSL を含む）
 sudo apt update
-sudo apt install -y g++-14 build-essential cmake libboost-all-dev
-make install  # /usr/local/bin にインストールされます
+sudo apt install -y g++-14 build-essential cmake
+sudo make install  # /usr/local/bin にインストールされます
+# ユーザーのホームディレクトリに入れる場合（sudo不要）
+make install PREFIX="$HOME/.local"
 ```
+
+Boostがシステムにない場合は、CMakeの構成時に最新安定版を自動で取得します。特定の版を使う場合は
+`-DCPT_BOOST_VERSION=1.92.0`、システムのBoostを必須にする場合は `-DCPT_FETCH_BOOST=OFF` を指定してください。
 
 ### アップデート
 ```sh
@@ -46,7 +51,10 @@ make uninstall
 make           # Release ビルド
 make build     # Release ビルド
 make debug     # Debug ビルド（gdb 起動ターゲットあり）
+make -j4 build # 4並列でビルド（CMakeにも伝播）
 ```
+
+`-j` を付けない場合はCMakeにも並列オプションを渡さず、`make -j` または `make -jN` の場合だけ同じ指定を渡します。
 
 ## 使い方
 
